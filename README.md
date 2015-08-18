@@ -6,7 +6,7 @@ Docker Compose is a cherished tool used in docker community that helps us model 
 
 ## Goal
 
-The project goal is to model a pod of containers with docker-compose and launch it with your favorite Mesos frameworks like Marathon, Apache Aurora, etc. One does not need to switch to Kubernetes on Mesos if all that they are looking is to launch pods. With network and storage plugins supported directly in Docker, one can model advanced pods supported through compose.
+The project goal is to model a pod of containers with docker-compose and launch it with your favorite Mesos frameworks like Marathon, Apache Aurora, etc. One does not need to switch to Kubernetes on Mesos if all that they are looking is to launch pods (model pod like workloads). With network and storage plugins supported directly in Docker, one can model advanced pods supported through compose. Also instead of using some different spec to define pods, we wanted to build around compose that is well accepted in the docker community.
 
 ## Licensing
 compose-executor is licensed under the Apache License, Version 2.0. See [LICENSE](/LICENSE) for the full license text.
