@@ -94,9 +94,9 @@ public class DockerComposeExecutor implements Executor{
 	 */
 	private void launchTask(TaskInfo taskInfo,ExecutorDriver executorDriver){
 		//get file name for URI
-		
-		//change yaml file names
-		String composeFileName = "docker-compose-example/docker-compose.yml";
+		List<Protos.CommandInfo.URI> uriList = taskInfo.getCommand().getUrisList();
+		String url = uriList.get(0).getValue();
+		String composeFileName = getFileName(url);
 		String updatedComposeName = "docker-compose-example/docker-compose_new.yml";
 		this.containerNames = editYaml(composeFileName,updatedComposeName, taskInfo.getTaskId().getValue());
 		
@@ -104,6 +104,16 @@ public class DockerComposeExecutor implements Executor{
 		launchDockerCompose(taskInfo,executorDriver,updatedComposeName);
 		
 		//push logs to corresponding files
+	}
+	
+	public String getFileName(String url){
+		String defaultFile = "docker-compose.yml";
+		if(url !=null && url.endsWith(".zip")){
+			String [] stringTokens = url.split("/");
+			String zipFolder = stringTokens[stringTokens.length-1];
+			defaultFile = zipFolder.substring(0, zipFolder.length()-4);
+		}
+		return defaultFile;
 	}
 	
 	
