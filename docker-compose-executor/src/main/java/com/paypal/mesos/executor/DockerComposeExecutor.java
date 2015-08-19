@@ -24,6 +24,7 @@ import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
+import org.apache.mesos.Protos.CommandInfo.URI;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import java.nio.file.Paths;
@@ -94,10 +95,10 @@ public class DockerComposeExecutor implements Executor{
 	 */
 	private void launchTask(TaskInfo taskInfo,ExecutorDriver executorDriver){
 		//get file name for URI
-		List<Protos.CommandInfo.URI> uriList = taskInfo.getCommand().getUrisList();
+		List<URI> uriList = taskInfo.getCommand().getUrisList();
 		String url = uriList.get(0).getValue();
 		String composeFileName = getFileName(url);
-		String updatedComposeName = "docker-compose-example/docker-compose_new.yml";
+		String updatedComposeName = "docker-compose_new.yml";
 		this.containerNames = editYaml(composeFileName,updatedComposeName, taskInfo.getTaskId().getValue());
 		
 		//launch docker compose
