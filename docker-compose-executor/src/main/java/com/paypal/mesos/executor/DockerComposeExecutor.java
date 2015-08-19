@@ -26,6 +26,7 @@ import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+import java.nio.file.Paths;
 
 public class DockerComposeExecutor implements Executor{
 
@@ -147,9 +148,15 @@ public class DockerComposeExecutor implements Executor{
 		Map<String,Map<String,Object>> yamlMap=readDockerCompose(fileName);
         List<String> containerNames = new ArrayList<String>();
 		Map<String,Object> resultMap = new HashMap<String, Object>();
+		
+		String containerId = getContainerId();
+                String parentCgroup = "/sys/fs/cgroup/cpu/mesos/" + containerId;
+                makeWritable(parentCgroup);
+
 		for(Map.Entry<String, Map<String,Object>> mapEntry:yamlMap.entrySet()){
 			String key = mapEntry.getKey();
 			Map<String,Object> yamlValue = mapEntry.getValue();
+			yamlValue.put("cgroup_parent", parentCgroup);
 			containerNames = replaceContainerNames(taskId, key, yamlValue);
 			resultMap.put(key,yamlValue);
 		}
@@ -238,6 +245,19 @@ public class DockerComposeExecutor implements Executor{
 		
 	}
 	
+	public String getContainerId() {
+	        String cwd = Paths.get(".").toAbsolutePath().normalize().toString();
+        	String[] split = cwd.split("/");
+        	return split[split.length - 1];
+    	}
+
+	private void makeWritable(String path) {
+    	    File file = new File(path);
+        	if (!file.setWritable(true, false)) {
+            		System.out.println(path + " is not writable");
+        	}
+    	}
+
 	public static void main(String[] args) {
 		DockerComposeExecutor dockerExecutor = new DockerComposeExecutor();
 		dockerExecutor.executorService = Executors.newCachedThreadPool();
