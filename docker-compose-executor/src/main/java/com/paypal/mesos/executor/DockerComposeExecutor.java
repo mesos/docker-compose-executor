@@ -17,6 +17,7 @@ import org.apache.log4j.Logger;
 import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
+import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.ExecutorInfo;
 import org.apache.mesos.Protos.FrameworkInfo;
 import org.apache.mesos.Protos.SlaveInfo;
@@ -24,10 +25,8 @@ import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
-import org.apache.mesos.Protos.CommandInfo.URI;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
-import java.nio.file.Paths;
 
 public class DockerComposeExecutor implements Executor{
 
@@ -95,13 +94,13 @@ public class DockerComposeExecutor implements Executor{
 	 */
 	private void launchTask(TaskInfo taskInfo,ExecutorDriver executorDriver){
 		//get file name for URI
-		// List<URI> uriList = taskInfo.getCommand().getUrisList();
-		// String url = uriList.get(0).getValue();
-		// String composeFileName = getFileName(url);
+		//List<Protos.CommandInfo.URI> uriList = taskInfo.getCommand().getUrisList();
+		//String url = uriList.get(0).getValue();
+		String composeFileName = "docker-compose-example.yml";//getFileName(url);
 
-		String composeFileName = "docker-compose-example/docker-compose.yml";//getFileName(url);
-		String updatedComposeName = "docker-compose_new.yml";
-		this.containerNames = editYaml(composeFileName,updatedComposeName, taskInfo.getTaskId().getValue());
+		//change yaml file names
+		String updatedComposeName = "docker-compose-example/docker-compose.yml";
+		//this.containerNames = editYaml(composeFileName,updatedComposeName, taskInfo.getTaskId().getValue());
 		
 		//launch docker compose
 		launchDockerCompose(taskInfo,executorDriver,updatedComposeName);
@@ -118,7 +117,6 @@ public class DockerComposeExecutor implements Executor{
 		}
 		return defaultFile;
 	}
-	
 	
 	private void launchDockerCompose(final TaskInfo taskInfo,final ExecutorDriver executorDriver,final String fileName){
 	  executorService.submit(new Callable<Integer>() {
@@ -161,16 +159,10 @@ public class DockerComposeExecutor implements Executor{
 		Map<String,Map<String,Object>> yamlMap=readDockerCompose(fileName);
         List<String> containerNames = new ArrayList<String>();
 		Map<String,Object> resultMap = new HashMap<String, Object>();
-		
-		// String containerId = getContainerId();
-  //               String parentCgroup = "/sys/fs/cgroup/cpu/mesos/" + containerId;
-  //               makeWritable(parentCgroup);
-
 		for(Map.Entry<String, Map<String,Object>> mapEntry:yamlMap.entrySet()){
 			String key = mapEntry.getKey();
 			Map<String,Object> yamlValue = mapEntry.getValue();
-			//yamlValue.put("cgroup_parent", parentCgroup);
-			containerNames = replaceContainerNames(taskId, key, yamlValue);
+			containerNames = null;//replaceContainerNames(taskId, key, yamlValue);
 			resultMap.put(key,yamlValue);
 		}
 		
@@ -222,19 +214,20 @@ public class DockerComposeExecutor implements Executor{
 
 		List<String> containerNames = new ArrayList<String>();
 		
-		Object containerValue = taskId+"_"+key;
+		Object containerValue = key;
 		if(yamlValue.containsKey(CONTAINER_NAME)){
-			containerValue = taskId+"_"+String.valueOf(yamlValue.get(CONTAINER_NAME));
+			containerValue = String.valueOf(yamlValue.get(CONTAINER_NAME));
 			containerNames.add((String)containerValue);
+			//yamlValue.put(CONTAINER_NAME, containerValue);
 		}
-		yamlValue.put(CONTAINER_NAME, containerValue);
+		
 
 		Object networkValue = yamlValue.get(NETWORK);
 		if(networkValue !=null && (String.valueOf(networkValue).contains("container"))){
 			String networkValueString = String.valueOf(yamlValue.get(NETWORK));
 			String [] split = networkValueString.split(":");
 			String containerName = split[split.length-1];
-			yamlValue.put(NETWORK, "container:"+taskId+"_"+containerName);	
+			//yamlValue.put(NETWORK, "container:"+taskId+"_"+containerName);	
 		}
 		
 		return containerNames;
@@ -258,19 +251,6 @@ public class DockerComposeExecutor implements Executor{
 		
 	}
 	
-	public String getContainerId() {
-	        String cwd = Paths.get(".").toAbsolutePath().normalize().toString();
-        	String[] split = cwd.split("/");
-        	return split[split.length - 1];
-    	}
-
-	private void makeWritable(String path) {
-    	    File file = new File(path);
-        	if (!file.setWritable(true, false)) {
-            		System.out.println(path + " is not writable");
-        	}
-    	}
-
 	public static void main(String[] args) {
 		DockerComposeExecutor dockerExecutor = new DockerComposeExecutor();
 		dockerExecutor.executorService = Executors.newCachedThreadPool();
