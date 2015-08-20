@@ -67,5 +67,16 @@ With Wetty one can avoid ssh/docker exec into the pod and use the browser termin
  
 Instead of static host port mapping, we can leverage dynamic ports as mesos resource and map it in compose file. However, if the network model assigns a routable IP (instead of private host ip’s, default bridge model), we don’t need to expose host ports as such.
 
+## Work-in-progress
+
+### Aurora Support
+
+* URL of work-in-progerss repo: https://github.com/rdelval/aurora/tree/aurora-1376-dynamic-custom-client
+
+### cgroup_parent support in docker-compose
+
+* docker-py project pull-request: https://github.com/docker/docker-py/pull/716
+* Work in progress repo of compose project: https://github.com/mohitsoni/compose
+
 ## Licensing
 compose-executor is licensed under the Apache License, Version 2.0. See [LICENSE](/LICENSE) for the full license text.
