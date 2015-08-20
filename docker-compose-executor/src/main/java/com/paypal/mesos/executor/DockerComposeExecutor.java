@@ -95,9 +95,11 @@ public class DockerComposeExecutor implements Executor{
 	 */
 	private void launchTask(TaskInfo taskInfo,ExecutorDriver executorDriver){
 		//get file name for URI
-		List<URI> uriList = taskInfo.getCommand().getUrisList();
-		String url = uriList.get(0).getValue();
-		String composeFileName = getFileName(url);
+		// List<URI> uriList = taskInfo.getCommand().getUrisList();
+		// String url = uriList.get(0).getValue();
+		// String composeFileName = getFileName(url);
+
+		String composeFileName = "docker-compose-example/docker-compose.yml";//getFileName(url);
 		String updatedComposeName = "docker-compose_new.yml";
 		this.containerNames = editYaml(composeFileName,updatedComposeName, taskInfo.getTaskId().getValue());
 		
@@ -160,14 +162,14 @@ public class DockerComposeExecutor implements Executor{
         List<String> containerNames = new ArrayList<String>();
 		Map<String,Object> resultMap = new HashMap<String, Object>();
 		
-		String containerId = getContainerId();
-                String parentCgroup = "/sys/fs/cgroup/cpu/mesos/" + containerId;
-                makeWritable(parentCgroup);
+		// String containerId = getContainerId();
+  //               String parentCgroup = "/sys/fs/cgroup/cpu/mesos/" + containerId;
+  //               makeWritable(parentCgroup);
 
 		for(Map.Entry<String, Map<String,Object>> mapEntry:yamlMap.entrySet()){
 			String key = mapEntry.getKey();
 			Map<String,Object> yamlValue = mapEntry.getValue();
-			yamlValue.put("cgroup_parent", parentCgroup);
+			//yamlValue.put("cgroup_parent", parentCgroup);
 			containerNames = replaceContainerNames(taskId, key, yamlValue);
 			resultMap.put(key,yamlValue);
 		}
