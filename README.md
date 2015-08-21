@@ -71,7 +71,25 @@ Instead of static host port mapping, we can leverage dynamic ports as mesos reso
 
 ### Aurora Support
 
-* URL of work-in-progerss repo: https://github.com/rdelval/aurora/tree/aurora-1376-dynamic-custom-client
+* Patch work for custom executors: https://reviews.apache.org/r/36289/
+
+## Aurora Demo 
+
+* Demo repo: https://github.com/rdelval/aurora/tree/compose-demo
+```
+Steps to run:
+  $ git clone https://github.com/rdelval/aurora/tree/compose-demo
+  $ cd aurora
+  $ vagrant up
+  $ vagrant ssh
+optional: $ aurorabuild all
+  $  aurora create dcomp docker-comp ""
+
+  Open web browser and go to 192.168.33.7:5050 to see task running
+  Point browser to 192.168.33.7:5000 to navigate to redis running inside of Docker
+  Point browser to 192.168.33.7:8000 to navigate to Wetty running inside of Docker
+ *Note: The first time this is run it could take some time to get the docker images depending on your internet connection, see sandbox stderr and stdout for progress
+```
 
 ### cgroup_parent support in docker-compose
 
