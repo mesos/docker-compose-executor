@@ -35,6 +35,10 @@ public class DockerComposeExecutor implements Executor{
 	private List<String> containerNames = null;
 	
 	private static final Logger log = Logger.getLogger(DockerComposeExecutor.class);
+
+   public void setExecutorService(ExecutorService executorService) {
+      this.executorService = executorService;
+   }
 	
 	public void disconnected(ExecutorDriver arg0) {
 		// TODO Auto-generated method stub
@@ -66,8 +70,10 @@ public class DockerComposeExecutor implements Executor{
 			Process process = processBuilder.start();
 			int exitCode = process.waitFor();
 			if(exitCode == 0){
+				System.err.println("Process cleanly exited");
 				log.info("Process cleanly exited");
 			}else{
+				System.err.println("Process didn't exit cleanly");
 				log.info("Process didn't exit cleanly");
 			}
 		} catch (IOException e) {
@@ -78,8 +84,9 @@ public class DockerComposeExecutor implements Executor{
 	}
 
 	public void launchTask(ExecutorDriver executorDriver, TaskInfo taskInfo) {
+      System.err.println("launching task with taskId:"+taskInfo.getTaskId().getValue());
 		log.info("launching task with taskId:"+taskInfo.getTaskId().getValue());
-	    sendTaskStatusUpdate(taskInfo, executorDriver, TaskState.TASK_STARTING);
+	   sendTaskStatusUpdate(taskInfo, executorDriver, TaskState.TASK_STARTING);
 		launchTask(taskInfo,executorDriver);
 		sendTaskStatusUpdate(taskInfo, executorDriver, TaskState.TASK_RUNNING);
 	}
@@ -128,9 +135,11 @@ public class DockerComposeExecutor implements Executor{
 					process = processBuilder.start();
 				    exitCode = process.waitFor();
 				} catch (IOException ioException) {
+					System.err.println("encountered IOException while running task:"+taskInfo.getTaskId().getValue());
 					log.warn("encountered IOException while running task:"+taskInfo.getTaskId().getValue());
 					exitCode = -1; 
 				} catch(InterruptedException interruptedException){
+					System.err.println("encountered Interrupted while running task:"+taskInfo.getTaskId().getValue());
 					log.warn("encountered Interrupted while running task:"+taskInfo.getTaskId().getValue());
 					exitCode = -1;
 				}finally{
@@ -150,7 +159,7 @@ public class DockerComposeExecutor implements Executor{
 			String fileName) {
 		ProcessBuilder processBuilder = new ProcessBuilder("docker-compose","-f",fileName,"up");
 		processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-        processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+      processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
         return processBuilder;
 	}
 	

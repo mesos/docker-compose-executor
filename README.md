@@ -85,7 +85,8 @@ Steps to run:
 optional: $ aurorabuild all
   $  aurora create dcomp docker-comp ""
 
-  Open web browser and go to 192.168.33.7:5050 to see task running
+  Open web browser and go to 192.168.33.7:5050 to see task running in Mesos
+  Point browser to 192.168.33.7:8081/scheduler/www-data to see task running in Aurora
   Point browser to 192.168.33.7:5000 to navigate to redis running inside of Docker
   Point browser to 192.168.33.7:8000 to navigate to Wetty running inside of Docker
  *Note: The first time this is run it could take some time to get the docker images depending on your internet connection, see sandbox stderr and stdout for progress
