@@ -41,3 +41,7 @@ Thumbs.db
 *.classpath
 *.project
 *.settings/*
+
+#Idea dependencies
+.idea/
+*.iml
