@@ -55,7 +55,7 @@ The redis and web container share the network namespace of the baseC container.
  
 Here is the output of running netstat –plant from wetty terminal:
 
-![Alt text](/screenshots/netstat-plant.jpg?raw=true "Wetty netstat")
+![Alt text](/screenshots/netstat-plant.png?raw=true "Wetty netstat")
 
  
 This shows information about all the bind ports in different containers in pod.
