@@ -1,23 +1,14 @@
 package com.paypal.mesos.executor;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
-import org.apache.mesos.MesosExecutorDriver;
-import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.ExecutorInfo;
 import org.apache.mesos.Protos.FrameworkInfo;
 import org.apache.mesos.Protos.SlaveInfo;
@@ -25,245 +16,139 @@ import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
-import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.Yaml;
+
+import com.paypal.mesos.executor.fetcher.FileFetcher;
+import com.paypal.mesos.executor.processbuilder.ProcessBuilderProvider;
 
 public class DockerComposeExecutor implements Executor{
 
-	private ExecutorService executorService = null;
-	
-	private List<String> containerNames = null;
-	
 	private static final Logger log = Logger.getLogger(DockerComposeExecutor.class);
-
-   public void setExecutorService(ExecutorService executorService) {
-      this.executorService = executorService;
-   }
 	
-	public void disconnected(ExecutorDriver arg0) {
-		// TODO Auto-generated method stub
-		
+	private ExecutorService executorService = null;
+
+	private FileFetcher fileFetcher;
+
+	private ProcessBuilderProvider processBuilderProvider;
+
+	private String fileName;
+	
+	private Process process;
+
+	@Inject
+	public DockerComposeExecutor(FileFetcher fileFetcher,ProcessBuilderProvider processBuilder,ExecutorService executorService){
+		this.fileFetcher = fileFetcher;
+		this.processBuilderProvider = processBuilder;
+		this.executorService = executorService;
 	}
 
-	public void error(ExecutorDriver arg0, String arg1) {
-		// TODO Auto-generated method stub
-		
-	}
 
-	public void frameworkMessage(ExecutorDriver arg0, byte[] arg1) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void killTask(ExecutorDriver executorDriver, TaskID taskId) {
-		if(containerNames == null || containerNames.isEmpty()){
-			return;
-		}
-
-		List<String> dockerKillParams = new ArrayList<String>();
-		dockerKillParams.add("docker");
-		dockerKillParams.add("kill");
-		dockerKillParams.addAll(containerNames);
-
-		ProcessBuilder processBuilder = new ProcessBuilder(dockerKillParams);
-		try {
-			Process process = processBuilder.start();
-			int exitCode = process.waitFor();
-			if(exitCode == 0){
-				System.err.println("Process cleanly exited");
-				log.info("Process cleanly exited");
-			}else{
-				System.err.println("Process didn't exit cleanly");
-				log.info("Process didn't exit cleanly");
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch(InterruptedException interruptedException){
-
-		}
-	}
-
+	@Override
 	public void launchTask(ExecutorDriver executorDriver, TaskInfo taskInfo) {
-      System.err.println("launching task with taskId:"+taskInfo.getTaskId().getValue());
-		log.info("launching task with taskId:"+taskInfo.getTaskId().getValue());
-	   sendTaskStatusUpdate(taskInfo, executorDriver, TaskState.TASK_STARTING);
-		launchTask(taskInfo,executorDriver);
-		sendTaskStatusUpdate(taskInfo, executorDriver, TaskState.TASK_RUNNING);
+		TaskID taskId = taskInfo.getTaskId();
+		sendTaskStatusUpdate(executorDriver,taskId,TaskState.TASK_STARTING);
+		try {
+			File file = fileFetcher.getFile(taskInfo);
+			this.fileName = file.getAbsolutePath();
+			ProcessBuilder processBuilder = processBuilderProvider.getProcessBuilder(TaskStates.LAUNCH_TASK, fileName);
+			this.process = processBuilder.start();
+			watchProcess(process,taskInfo,executorDriver);
+		}catch (Exception e) {
+			sendTaskStatusUpdate(executorDriver,taskId,TaskState.TASK_FAILED);
+			log.warn("exception while launching process"+e.getMessage());
+		} 
+		sendTaskStatusUpdate(executorDriver,taskId,TaskState.TASK_RUNNING);
 	}
 
-	private void sendTaskStatusUpdate(TaskInfo taskInfo,ExecutorDriver executorDriver,TaskState taskState){
-		TaskStatus taskStatus = TaskStatus.newBuilder().setTaskId(taskInfo.getTaskId()).setState(taskState).build();
+	 
+	private void sendTaskStatusUpdate(ExecutorDriver executorDriver,TaskID taskId,TaskState taskState){
+		TaskStatus taskStatus = TaskStatus.newBuilder().setTaskId(taskId).setState(taskState).build();
 		executorDriver.sendStatusUpdate(taskStatus);
 	}
-	
-	/**
-	 * @param taskInfo
-	 */
-	private void launchTask(TaskInfo taskInfo,ExecutorDriver executorDriver){
-		//get file name for URI
-		//List<Protos.CommandInfo.URI> uriList = taskInfo.getCommand().getUrisList();
-		//String url = uriList.get(0).getValue();
-		String composeFileName = "docker-compose-example.yml";//getFileName(url);
 
-		//change yaml file names
-		String updatedComposeName = "docker-compose-example/docker-compose.yml";
-		//this.containerNames = editYaml(composeFileName,updatedComposeName, taskInfo.getTaskId().getValue());
-		
-		//launch docker compose
-		launchDockerCompose(taskInfo,executorDriver,updatedComposeName);
-		
-		//push logs to corresponding files
-	}
-	
-	public String getFileName(String url){
-		String defaultFile = "docker-compose.yml";
-		if(url !=null && url.endsWith(".zip")){
-			String [] stringTokens = url.split("/");
-			String zipFolder = stringTokens[stringTokens.length-1];
-			defaultFile = zipFolder.substring(0, zipFolder.length()-4);
-		}
-		return defaultFile;
-	}
-	
-	private void launchDockerCompose(final TaskInfo taskInfo,final ExecutorDriver executorDriver,final String fileName){
-	  executorService.submit(new Callable<Integer>() {
-			public Integer call() {
+
+	private void watchProcess(final Process process,final TaskInfo taskInfo,final ExecutorDriver executorDriver){
+		executorService.execute(new Runnable() {
+			@Override
+			public void run() {
+				boolean isInterupted = false;
 				int exitCode = 0;
-				ProcessBuilder processBuilder = createDockerComposeProcessBuilder(fileName);
-				Process process;
 				try {
-					process = processBuilder.start();
-				    exitCode = process.waitFor();
-				} catch (IOException ioException) {
-					System.err.println("encountered IOException while running task:"+taskInfo.getTaskId().getValue());
-					log.warn("encountered IOException while running task:"+taskInfo.getTaskId().getValue());
-					exitCode = -1; 
-				} catch(InterruptedException interruptedException){
-					System.err.println("encountered Interrupted while running task:"+taskInfo.getTaskId().getValue());
-					log.warn("encountered Interrupted while running task:"+taskInfo.getTaskId().getValue());
-					exitCode = -1;
-				}finally{
-					TaskState taskState = TaskState.TASK_FINISHED;
-					if(exitCode != 0){
-						taskState = TaskState.TASK_FAILED;
-					}
-					sendTaskStatusUpdate(taskInfo, executorDriver, taskState);
+					exitCode = process.waitFor();
+				} catch (InterruptedException e) {
+					isInterupted = true;
+					log.warn("interupted while waiting for process to be completed:"+taskInfo.getTaskId().getValue());
+				} finally{
+					killTask(executorDriver,taskInfo.getTaskId());
+					sendUpdateToFramework((exitCode != 0 || isInterupted), taskInfo.getTaskId(), executorDriver);
 				}
-				return exitCode;
 			}
 		});
 	}
 	
-	
-	private ProcessBuilder createDockerComposeProcessBuilder(
-			String fileName) {
-		ProcessBuilder processBuilder = new ProcessBuilder("docker-compose","-f",fileName,"up");
-		processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-      processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
-        return processBuilder;
-	}
-	
-	public List<String> editYaml(String fileName,String newFileName,String taskId){
-
-		Map<String,Map<String,Object>> yamlMap=readDockerCompose(fileName);
-        List<String> containerNames = new ArrayList<String>();
-		Map<String,Object> resultMap = new HashMap<String, Object>();
-		for(Map.Entry<String, Map<String,Object>> mapEntry:yamlMap.entrySet()){
-			String key = mapEntry.getKey();
-			Map<String,Object> yamlValue = mapEntry.getValue();
-			containerNames = null;//replaceContainerNames(taskId, key, yamlValue);
-			resultMap.put(key,yamlValue);
-		}
-		
-		writeFile(newFileName, resultMap);
-        return containerNames;
-	}
-
-	private void writeFile(String fileName,Map<String,Object> ymlFile){
-		Yaml writerYaml = createYaml();
-		try{
-			FileWriter writer = new FileWriter(fileName);
-			writerYaml.dump(ymlFile,writer);
-			writer.flush();
-			writer.close();
-		}catch(FileNotFoundException e){
-
-		}catch(IOException io){
-
-		}
-	}
-
-	private Yaml createYaml(){
-		DumperOptions options=new DumperOptions();
-		options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-		return new Yaml(options);
-	}
-
-
-	@SuppressWarnings("unchecked")
-	private Map<String,Map<String,Object>> readDockerCompose(String fileName){
-		FileReader fileReader;
-		Map<String,Map<String,Object>> yamlMap = null;
+	@Override
+	public void killTask(ExecutorDriver executorDriver, TaskID taskId) {
+		Process killProcess = null;
+		int exitStatus = 0;
 		try {
-			fileReader = new FileReader(new File(fileName));
-			Yaml yaml = new Yaml();
-			yamlMap = (Map<String,Map<String,Object>>)yaml.load(fileReader);
-			fileReader.close();
-		} catch (FileNotFoundException e) {
-
-		} catch(IOException io){
-
+			executorService.shutdown();
+			killProcess = processBuilderProvider.getProcessBuilder(TaskStates.KILL_TASK, fileName).start();
+		    exitStatus = killProcess.waitFor();
+		    log.info("killing Task is completed and exit code is:"+exitStatus);
+		} catch (InterruptedException e) {
+			log.info("interrupted while waiting to kill process");
+		} catch (IOException e) {
+			log.info("IOException while trying to kill process");
+		}finally{
+			if(killProcess != null){
+				killProcess.destroy();
+			}
+			if(process != null){
+				process.destroy();
+			}
+			sendUpdateToFramework((exitStatus != 0 || exitStatus != 137), taskId, executorDriver);
 		}
-		return yamlMap;
-	}
-
-	private List<String> replaceContainerNames(String taskId,String key,Map<String,Object> yamlValue){
-		String CONTAINER_NAME = "container_name";
-		String NETWORK = "net";
-
-		List<String> containerNames = new ArrayList<String>();
-		
-		Object containerValue = key;
-		if(yamlValue.containsKey(CONTAINER_NAME)){
-			containerValue = String.valueOf(yamlValue.get(CONTAINER_NAME));
-			containerNames.add((String)containerValue);
-			//yamlValue.put(CONTAINER_NAME, containerValue);
-		}
-		
-
-		Object networkValue = yamlValue.get(NETWORK);
-		if(networkValue !=null && (String.valueOf(networkValue).contains("container"))){
-			String networkValueString = String.valueOf(yamlValue.get(NETWORK));
-			String [] split = networkValueString.split(":");
-			String containerName = split[split.length-1];
-			//yamlValue.put(NETWORK, "container:"+taskId+"_"+containerName);	
-		}
-		
-		return containerNames;
-	}
-
-
-
-	public void registered(ExecutorDriver arg0, ExecutorInfo arg1,
-			FrameworkInfo arg2, SlaveInfo arg3) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void reregistered(ExecutorDriver arg0, SlaveInfo arg1) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void shutdown(ExecutorDriver arg0) {
-		// TODO Auto-generated method stub
-		
 	}
 	
-	public static void main(String[] args) {
-		DockerComposeExecutor dockerExecutor = new DockerComposeExecutor();
-		dockerExecutor.executorService = Executors.newCachedThreadPool();
-		new MesosExecutorDriver(dockerExecutor).run();
+	private void sendUpdateToFramework(boolean hasTaskFailed,TaskID taskId,ExecutorDriver executorDriver){
+		if(hasTaskFailed){
+			sendTaskStatusUpdate(executorDriver,taskId, TaskState.TASK_FAILED);
+		}else{
+			sendTaskStatusUpdate(executorDriver,taskId, TaskState.TASK_FINISHED);
+		}
+	}
+	
+	@Override
+	public void disconnected(ExecutorDriver executorDriver) {
+		log.debug("executor disconnected");
+	}
+
+	@Override
+	public void error(ExecutorDriver executorDriver, String errorMessage) {
+		log.warn("executor received an error message:"+errorMessage);
+	}
+
+	@Override
+	public void frameworkMessage(ExecutorDriver arg0, byte[] arg1) {
+		log.debug("received framework message");
+	}
+	
+	@Override
+	public void registered(ExecutorDriver executorDriver, ExecutorInfo executorInfo,
+			FrameworkInfo frameworkInfo, SlaveInfo slaveInfo) {
+		log.debug("executor registered with framework:"+frameworkInfo.getName()+":on slave:"+slaveInfo.getHostname());
+	}
+
+	@Override
+	public void reregistered(ExecutorDriver executorDriver, SlaveInfo slaveInfo) {
+		log.debug("executor reregistered on slave:"+slaveInfo.getHostname());
+	}
+
+	@Override
+	public void shutdown(ExecutorDriver executorDriver) {
+		log.debug("shutting down executor");
+		if(process != null){
+			process.destroy();
+		}
 	}
 
 }

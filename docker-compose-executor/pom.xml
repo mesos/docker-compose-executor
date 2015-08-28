@@ -13,12 +13,6 @@
 			<version>0.23.0</version>
 		</dependency>
 
-		<dependency>
-			<groupId>com.google.protobuf</groupId>
-			<artifactId>protobuf-java</artifactId>
-			<version>2.5.0</version>
-		</dependency>
-
 
 		<dependency>
 			<groupId>log4j</groupId>
@@ -27,47 +21,71 @@
 		</dependency>
 
 		<dependency>
+			<groupId>com.google.protobuf</groupId>
+			<artifactId>protobuf-java</artifactId>
+			<version>2.5.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.dagger</groupId>
+			<artifactId>dagger</artifactId>
+			<version>2.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.dagger</groupId>
+			<artifactId>dagger-compiler</artifactId>
+			<version>2.0</version>
+			<optional>true</optional>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.0</version>
+		</dependency>
+
+		<dependency>
 			<groupId>org.yaml</groupId>
 			<artifactId>snakeyaml</artifactId>
 			<version>1.5</version>
 		</dependency>
 
-
 	</dependencies>
 
-   <build>
-      <plugins>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-shade-plugin</artifactId>
-            <version>2.4</version>
-            <executions>
-               <execution>
-                  <phase>package</phase>
-                  <goals>
-                     <goal>shade</goal>
-                  </goals>
-                  <configuration>
-                     <transformers>
-                        <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                           <manifestEntries>
-                              <Main-Class>com.paypal.mesos.executor.Driver</Main-Class>
-                           </manifestEntries>
-                        </transformer>
-                     </transformers>
-                  </configuration>
-               </execution>
-            </executions>
+	<build>
+		<outputDirectory>bin/classes</outputDirectory>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.1</version>
+				<dependencies>
+					<dependency>
+						<groupId>com.google.dagger</groupId>
+						<artifactId>dagger-compiler</artifactId>
+						<version>2.0</version>
+					</dependency>
+				</dependencies>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+					<!-- workaround for http://jira.codehaus.org/browse/MCOMPILER-202 -->
+					<forceJavacCompilerUse>true</forceJavacCompilerUse>
+				</configuration>
 			</plugin>
 			<plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <version>3.3</version>
-            <configuration>
-               <source>1.7</source>
-               <target>1.7</target>
-            </configuration>
-         </plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifest>
+							<mainClass>com.paypal.mesos.executor.App</mainClass>
+						</manifest>
+					</archive>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 
