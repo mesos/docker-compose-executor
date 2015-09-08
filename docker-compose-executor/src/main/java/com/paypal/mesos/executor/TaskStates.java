@@ -6,4 +6,5 @@ public interface TaskStates {
 	
 	public static final String KILL_TASK = "KillTask";
 	
+	public static final String REMOVE_TASK = "removeTask";
 }

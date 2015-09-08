@@ -2,36 +2,46 @@ package com.paypal.mesos.executor.fetcher;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IllegalFormatFlagsException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
+import org.apache.log4j.Logger;
+import org.apache.mesos.Protos.Resource;
 import org.apache.mesos.Protos.TaskInfo;
+import org.apache.mesos.Protos.Value.Range;
+import org.apache.mesos.Protos.Value.Ranges;
 
 public class DockerRewriteHelper {
 
+	private static final Logger log = Logger.getLogger(DockerRewriteHelper.class);
+	
 	private static final String CONTAINER_NAME = "container_name";
 	private static final String NETWORK = "net";
 	private static final String LINKS = "links";
-
+	private static final String PORTS = "ports";
 	public Map<String,Map<String,Object>> updateYaml(Map<String,Map<String,Object>> yamlMap,TaskInfo taskInfo){
 		if(yamlMap == null || yamlMap.isEmpty()){
 			return null;
 		}
-		Map<String,Map<String,Object>> resultantContainerMap = new HashMap<String,Map<String,Object>>();
-		String taskId = "12345";//taskInfo.getTaskId().getValue();
 
+		Map<String,Map<String,Object>> resultantContainerMap = new HashMap<String,Map<String,Object>>();
+		String taskId = taskInfo.getTaskId().getValue();
+		Iterator<Long> portIterator = getPortMappingIterator(taskInfo);
 		for(Map.Entry<String, Map<String,Object>> containerEntry:yamlMap.entrySet()){
 			String key = containerEntry.getKey();
 			Map<String,Object> containerValue = containerEntry.getValue();
-			Map<String,Object> updatedContainerValues = updateContainerValue(taskId,containerValue);
+			Map<String,Object> updatedContainerValues = updateContainerValue(taskId,containerValue,portIterator);
 			String updatedKey = prefixTaskId(taskId, key);
 			resultantContainerMap.put(updatedKey,updatedContainerValues);
 		}
 		return resultantContainerMap;
 	}
 
-	
-	private Map<String,Object> updateContainerValue(String taskId,Map<String,Object> containerDetails){
+
+	private Map<String,Object> updateContainerValue(String taskId,Map<String,Object> containerDetails,Iterator<Long> portIterator){
 
 		if(containerDetails.containsKey(CONTAINER_NAME)){
 			String containerValue = taskId+"_"+String.valueOf(containerDetails.get(CONTAINER_NAME));
@@ -57,7 +67,52 @@ public class DockerRewriteHelper {
 			containerDetails.put(LINKS, updatedLinks);
 		}
 
+		Object portMappings = containerDetails.get(PORTS);
+		if(portMappings != null){
+			List<String> updatedPorts = new ArrayList<String>();
+			@SuppressWarnings("unchecked")
+			List<String> portStrings = (ArrayList<String>)portMappings;
+			for(String portString:portStrings){
+				String replacedPort = replacePort(portString,portIterator);
+				updatedPorts.add(replacedPort);
+			}
+			containerDetails.put(PORTS, updatedPorts);
+		}
+		
 		return containerDetails;
+	}
+
+	private String replacePort(String portString,Iterator<Long> portIterator){
+		if(portIterator.hasNext()){
+			String [] tokens = portString.split(":");
+			if(tokens.length > 1){
+				return portIterator.next()+":"+tokens[1];
+			}else{
+				throw new IllegalFormatFlagsException("port mappings in docker-compose file not valid");
+			}
+		}else{
+			throw new NoSuchElementException("Insufficient number of ports allocated");
+		}
+	}
+	
+	private Iterator<Long> getPortMappingIterator(TaskInfo taskInfo){
+		List<Resource> list = taskInfo.getResourcesList();
+		List<Long> ports = new ArrayList<Long>();
+		for(Resource resource:list){
+			String name = resource.getName();
+			if("ports".equals(name)){
+				Ranges ranges = resource.getRanges();
+				for(Range range:ranges.getRangeList()){
+					long startPort = range.getBegin();
+					long endPort = range.getEnd();
+					for(int i=0;i<=endPort-startPort;i++){
+						ports.add(startPort+i);
+					}
+				}
+			}
+		}
+		System.out.println("ports provided are:"+ports);
+		return ports.iterator();
 	}
 	
 	private String prefixTaskId(String taskId,String key){

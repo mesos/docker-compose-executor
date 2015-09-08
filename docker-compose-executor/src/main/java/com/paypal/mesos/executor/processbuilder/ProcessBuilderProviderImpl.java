@@ -19,6 +19,10 @@ public class ProcessBuilderProviderImpl implements ProcessBuilderProvider{
 			processBuilder = killTask(fileName);
 			break;
 
+		case TaskStates.REMOVE_TASK:
+			processBuilder = removeTask(fileName);
+			break;
+			
 		default:
 			throw new RuntimeException("Unable to build process builder for processName:"+processName);
 		}
@@ -44,7 +48,16 @@ public class ProcessBuilderProviderImpl implements ProcessBuilderProvider{
 		return createProcessBuilder(commandList);
 	}
 
-
+    private ProcessBuilder removeTask(String fileName){
+    	List<String> commandList = new ArrayList<String>();
+		commandList.add("docker-compose");
+		commandList.add("-f");
+		commandList.add(fileName);
+		commandList.add("rm");
+		commandList.add("--force");
+		return createProcessBuilder(commandList);
+    }
+    
 	private ProcessBuilder createProcessBuilder(List<String> commandList){
 		ProcessBuilder processBuilder = new ProcessBuilder(commandList);
 		return processBuilder.inheritIO();

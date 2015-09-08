@@ -44,6 +44,7 @@ public class DockerComposeExecutor implements Executor{
 
 	@Override
 	public void launchTask(ExecutorDriver executorDriver, TaskInfo taskInfo) {
+		System.out.println("launch task called:"+taskInfo);
 		TaskID taskId = taskInfo.getTaskId();
 		sendTaskStatusUpdate(executorDriver,taskId,TaskState.TASK_STARTING);
 		try {
@@ -87,12 +88,15 @@ public class DockerComposeExecutor implements Executor{
 	
 	@Override
 	public void killTask(ExecutorDriver executorDriver, TaskID taskId) {
-		Process killProcess = null;
-		int exitStatus = 0;
+		System.out.println("kill task called");
+		Process killProcess = null,removeProcess = null;
+		int exitStatus = 0,removeExitStatus = 0;
 		try {
 			executorService.shutdown();
 			killProcess = processBuilderProvider.getProcessBuilder(TaskStates.KILL_TASK, fileName).start();
 		    exitStatus = killProcess.waitFor();
+		    removeProcess = processBuilderProvider.getProcessBuilder(TaskStates.REMOVE_TASK, fileName).start();
+		    removeExitStatus = removeProcess.waitFor();
 		    log.info("killing Task is completed and exit code is:"+exitStatus);
 		} catch (InterruptedException e) {
 			log.info("interrupted while waiting to kill process");
@@ -102,10 +106,13 @@ public class DockerComposeExecutor implements Executor{
 			if(killProcess != null){
 				killProcess.destroy();
 			}
+			if(removeProcess != null){
+				removeProcess.destroy();
+			}
 			if(process != null){
 				process.destroy();
 			}
-			sendUpdateToFramework((exitStatus != 0 || exitStatus != 137), taskId, executorDriver);
+			sendUpdateToFramework(((exitStatus != 0 || exitStatus != 137) && (removeExitStatus !=0)), taskId, executorDriver);
 		}
 	}
 	
