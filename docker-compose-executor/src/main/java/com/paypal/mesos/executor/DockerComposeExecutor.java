@@ -113,6 +113,7 @@ public class DockerComposeExecutor implements Executor{
 				process.destroy();
 			}
 			sendUpdateToFramework(((exitStatus != 0 || exitStatus != 137) && (removeExitStatus !=0)), taskId, executorDriver);
+			System.exit(0);
 		}
 	}
 	

@@ -22,14 +22,15 @@ public class DockerRewriteHelper {
 	private static final String NETWORK = "net";
 	private static final String LINKS = "links";
 	private static final String PORTS = "ports";
+	
 	public Map<String,Map<String,Object>> updateYaml(Map<String,Map<String,Object>> yamlMap,TaskInfo taskInfo){
 		if(yamlMap == null || yamlMap.isEmpty()){
 			return null;
 		}
-
 		Map<String,Map<String,Object>> resultantContainerMap = new HashMap<String,Map<String,Object>>();
 		String taskId = taskInfo.getTaskId().getValue();
 		Iterator<Long> portIterator = getPortMappingIterator(taskInfo);
+		
 		for(Map.Entry<String, Map<String,Object>> containerEntry:yamlMap.entrySet()){
 			String key = containerEntry.getKey();
 			Map<String,Object> containerValue = containerEntry.getValue();
@@ -44,7 +45,7 @@ public class DockerRewriteHelper {
 	private Map<String,Object> updateContainerValue(String taskId,Map<String,Object> containerDetails,Iterator<Long> portIterator){
 
 		if(containerDetails.containsKey(CONTAINER_NAME)){
-			String containerValue = taskId+"_"+String.valueOf(containerDetails.get(CONTAINER_NAME));
+			String containerValue = prefixTaskId(taskId,String.valueOf(containerDetails.get(CONTAINER_NAME)));
 			containerDetails.put(CONTAINER_NAME, containerValue);
 		}
 
@@ -111,7 +112,6 @@ public class DockerRewriteHelper {
 				}
 			}
 		}
-		System.out.println("ports provided are:"+ports);
 		return ports.iterator();
 	}
 	
