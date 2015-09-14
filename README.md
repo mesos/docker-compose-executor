@@ -69,6 +69,39 @@ Instead of static host port mapping, we can leverage dynamic ports as mesos reso
 
 ## Work-in-progress
 
+## Marathon Support
+
+```
+1.Create a marathon app POST /v2/apps
+Sample payload:
+
+{
+    "id": "docker-compose-demo",
+    "cmd": "",
+    "cpus": 1.0,
+    "mem": 64.0,
+    "ports":[0,0,0],
+    "instances": 1,
+    "executor":"/code/docker-compose-executor.sh",
+  	"labels": {
+        "fileName": "docker-compose-example/docker-compose.yml"
+    },
+  "uris":["https://dl.dropboxusercontent.com/u/26009359/docker-compose-example.zip"]
+}
+ 
+executor contains path to the executor. Below screenshot shows taskId appended to container names and
+mapping host ports provided by mesos to container ports.
+```
+```
+2. Scale up & Scale down PUT /v2/apps/docker-compose-demo
+Sample payload:
+{
+ "instances": 3
+}
+```
+```
+
+```
 ### Aurora Support
 
 * Patch work for custom executors: https://reviews.apache.org/r/36289/
