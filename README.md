@@ -92,6 +92,7 @@ Sample payload:
 executor contains path to the executor. Below screenshot shows taskId appended to container names and
 mapping host ports provided by mesos to container ports.
 ```
+![Alt text](/screenshots/one.png?raw=true "Output of docker ps")
 ```
 2. Scale up & Scale down PUT /v2/apps/docker-compose-demo
 Sample payload:
@@ -99,9 +100,7 @@ Sample payload:
  "instances": 3
 }
 ```
-```
-
-```
+![Alt text](/screenshots/three.png?raw=true "docker ps multiple instances")
 ### Aurora Support
 
 * Patch work for custom executors: https://reviews.apache.org/r/36289/
