@@ -8,6 +8,6 @@ import org.apache.mesos.Protos.TaskInfo;
 
 public interface FileFetcher {
 
-	public File getFile(TaskInfo taskInfo) throws IOException,FileNotFoundException;
+	File getFile(TaskInfo taskInfo) throws IOException;
 	
 }

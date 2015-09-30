@@ -10,6 +10,6 @@ import dagger.Component;
 @Component(modules = { FileFetcherModule.class,ProcessBuilderModule.class,ExecutorModule.class})
 public interface ExecutorComponent {
 
-	public Executor getExecutor();
+	Executor getExecutor();
 	
 }
