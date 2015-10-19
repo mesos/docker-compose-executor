@@ -3,6 +3,7 @@ package com.paypal.mesos.executor;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.inject.Inject;
 
@@ -17,6 +18,15 @@ import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
 
+import rx.Observable;
+import rx.Subscription;
+import rx.schedulers.Schedulers;
+import rx.subjects.BehaviorSubject;
+import rx.subjects.PublishSubject;
+
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.model.Event;
+import com.github.dockerjava.core.DockerClientBuilder;
 import com.paypal.mesos.executor.fetcher.FileFetcher;
 import com.paypal.mesos.executor.processbuilder.ProcessBuilderProvider;
 
@@ -34,6 +44,8 @@ public class DockerComposeExecutor implements Executor{
 	
 	private Process process;
 
+	private ExecutorDriver executorDriver;
+	
 	@Inject
 	public DockerComposeExecutor(FileFetcher fileFetcher,ProcessBuilderProvider processBuilder,ExecutorService executorService){
 		this.fileFetcher = fileFetcher;
@@ -50,8 +62,7 @@ public class DockerComposeExecutor implements Executor{
 		try {
 			File file = fileFetcher.getFile(taskInfo);
 			this.fileName = file.getAbsolutePath();
-			ProcessBuilder processBuilder = processBuilderProvider.getProcessBuilder(TaskStates.LAUNCH_TASK, fileName);
-			this.process = processBuilder.start();
+			startWatchingDockerEvents(taskId);
 			watchProcess(process,taskInfo,executorDriver);
 		}catch (Exception e) {
 			sendTaskStatusUpdate(executorDriver,taskId,TaskState.TASK_FAILED);
@@ -60,30 +71,64 @@ public class DockerComposeExecutor implements Executor{
 		sendTaskStatusUpdate(executorDriver,taskId,TaskState.TASK_RUNNING);
 	}
 
+	private void startWatchingDockerEvents(TaskID taskId){
+		System.out.println("start watching for docker events");
+		ExecutorService executorService = Executors.newCachedThreadPool();
+		PublishSubject<Event> subject = PublishSubject.create();
+		DockerClient dockerClient = DockerClientBuilder.getInstance("unix:///var/run/docker.sock").build();
+		DockerEventObservable observable = new DockerEventObservable(executorService,dockerClient);
+		DockerEventObserver observer = new DockerEventObserver(dockerClient,taskId,this.fileName,this);
+		subject.subscribe(observer);
+		observable.captureContainerDetails(subject);
+		System.out.println("reached end of docker events");
+	}
 	 
 	private void sendTaskStatusUpdate(ExecutorDriver executorDriver,TaskID taskId,TaskState taskState){
 		TaskStatus taskStatus = TaskStatus.newBuilder().setTaskId(taskId).setState(taskState).build();
 		executorDriver.sendStatusUpdate(taskStatus);
 	}
 
-
+   
 	private void watchProcess(final Process process,final TaskInfo taskInfo,final ExecutorDriver executorDriver){
-		executorService.execute(new Runnable() {
-			@Override
-			public void run() {
-				boolean isInterupted = false;
-				int exitCode = 0;
-				try {
-					exitCode = process.waitFor();
-				} catch (InterruptedException e) {
-					isInterupted = true;
-					log.warn("interupted while waiting for process to be completed:"+taskInfo.getTaskId().getValue());
-				} finally{
-					killTask(executorDriver,taskInfo.getTaskId());
-					sendUpdateToFramework((exitCode != 0 || isInterupted), taskInfo.getTaskId(), executorDriver);
-				}
+		LaunchCompose compose = new LaunchCompose(executorDriver, taskInfo, process);
+		executorService.execute(compose);
+	}
+	
+	class LaunchCompose implements Runnable{
+
+		ExecutorDriver executorDriver;
+		TaskInfo taskInfo;
+		Process process;
+		
+	  public LaunchCompose(ExecutorDriver executorDriver,TaskInfo taskInfo,Process process) {
+			this.executorDriver = executorDriver;
+			this.taskInfo = taskInfo;
+			this.process = process;
+		}
+		
+		@Override
+		public void run() {
+			boolean isInterupted = false;
+			int exitCode = 0;
+			try {
+				ProcessBuilder processBuilder = processBuilderProvider.getProcessBuilder(TaskStates.LAUNCH_TASK, fileName);
+				this.process = processBuilder.start();
+				exitCode = process.waitFor();
+			} catch (InterruptedException e) {
+				isInterupted = true;
+				log.warn("interupted while waiting for process to be completed:"+taskInfo.getTaskId().getValue());
+			}catch(IOException e){ 
+				isInterupted = true;
+				log.warn("IO exception while waiting:"+taskInfo.getTaskId().getValue());
+			}finally{
+				killTask(executorDriver,taskInfo.getTaskId());
+				sendUpdateToFramework((exitCode != 0 || isInterupted), taskInfo.getTaskId(), executorDriver);
 			}
-		});
+		}
+	}
+	
+	public void suicide(TaskID taskId){
+		killTask(this.executorDriver,taskId);
 	}
 	
 	@Override
@@ -144,11 +189,13 @@ public class DockerComposeExecutor implements Executor{
 	public void registered(ExecutorDriver executorDriver, ExecutorInfo executorInfo,
 			FrameworkInfo frameworkInfo, SlaveInfo slaveInfo) {
 		log.debug("executor registered with framework:"+frameworkInfo.getName()+":on slave:"+slaveInfo.getHostname());
+		this.executorDriver = executorDriver;
 	}
 
 	@Override
 	public void reregistered(ExecutorDriver executorDriver, SlaveInfo slaveInfo) {
 		log.debug("executor reregistered on slave:"+slaveInfo.getHostname());
+		this.executorDriver = executorDriver;
 	}
 
 	@Override
@@ -157,6 +204,7 @@ public class DockerComposeExecutor implements Executor{
 		if(process != null){
 			process.destroy();
 		}
+		System.exit(0);
 	}
 
 }

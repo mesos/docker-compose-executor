@@ -58,9 +58,10 @@ public class ProcessBuilderProviderImpl implements ProcessBuilderProvider{
 		return createProcessBuilder(commandList);
     }
     
+    //TODO this must return processBuilder.inheritIO();
 	private ProcessBuilder createProcessBuilder(List<String> commandList){
 		ProcessBuilder processBuilder = new ProcessBuilder(commandList);
-		return processBuilder.inheritIO();
+		return processBuilder;
 	}
 
 }

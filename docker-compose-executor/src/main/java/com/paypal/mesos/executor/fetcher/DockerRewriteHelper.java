@@ -22,6 +22,7 @@ public class DockerRewriteHelper {
 	private static final String NETWORK = "net";
 	private static final String LINKS = "links";
 	private static final String PORTS = "ports";
+	private static final String LABELS = "labels";
 	
 	public Map<String,Map<String,Object>> updateYaml(Map<String,Map<String,Object>> yamlMap,TaskInfo taskInfo){
 		if(yamlMap == null || yamlMap.isEmpty()){
@@ -79,6 +80,10 @@ public class DockerRewriteHelper {
 			}
 			containerDetails.put(PORTS, updatedPorts);
 		}
+		
+		Map<String,String> taskIdLabel = new HashMap<String, String>();
+		taskIdLabel.put("taskId", taskId);
+		containerDetails.put(LABELS, taskIdLabel);
 		
 		return containerDetails;
 	}
