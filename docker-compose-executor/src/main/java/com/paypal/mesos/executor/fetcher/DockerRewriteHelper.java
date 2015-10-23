@@ -21,6 +21,7 @@ public class DockerRewriteHelper {
 	private static final String CONTAINER_NAME = "container_name";
 	private static final String NETWORK = "net";
 	private static final String LINKS = "links";
+	private static final String VOLUMES_FROM = "volumes_from";
 	private static final String PORTS = "ports";
 	private static final String LABELS = "labels";
 	
@@ -67,6 +68,17 @@ public class DockerRewriteHelper {
 				updatedLinks.add(prefixTaskId(taskId, link));
 			}
 			containerDetails.put(LINKS, updatedLinks);
+		}
+
+		Object volumesFromValues = containerDetails.get(VOLUMES_FROM);
+		if(volumesFromValues != null){
+			List<String> updatedVolumesFrom = new ArrayList<String>();
+			@SuppressWarnings("unchecked")
+			List<String> volumesFrom = (ArrayList<String>)volumesFromValues;
+			for(String volumeFrom:volumesFrom){
+				updatedVolumesFrom.add(prefixTaskId(taskId, volumeFrom));
+			}
+			containerDetails.put(VOLUMES_FROM, updatedVolumesFrom);
 		}
 
 		Object portMappings = containerDetails.get(PORTS);
