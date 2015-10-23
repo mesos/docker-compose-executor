@@ -18,10 +18,6 @@ import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
 
-import rx.Observable;
-import rx.Subscription;
-import rx.schedulers.Schedulers;
-import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
 
 import com.github.dockerjava.api.DockerClient;
@@ -29,6 +25,7 @@ import com.github.dockerjava.api.model.Event;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.paypal.mesos.executor.fetcher.FileFetcher;
 import com.paypal.mesos.executor.processbuilder.ProcessBuilderProvider;
+import com.paypal.mesos.executor.utils.ProcessUtils;
 
 public class DockerComposeExecutor implements Executor{
 
@@ -99,6 +96,7 @@ public class DockerComposeExecutor implements Executor{
 		ExecutorDriver executorDriver;
 		TaskInfo taskInfo;
 		Process process;
+		final String DOCKER_IMAGE_UPDATE_CMD = "docker-compose -f pull";
 		
 	  public LaunchCompose(ExecutorDriver executorDriver,TaskInfo taskInfo,Process process) {
 			this.executorDriver = executorDriver;
@@ -111,6 +109,8 @@ public class DockerComposeExecutor implements Executor{
 			boolean isInterupted = false;
 			int exitCode = 0;
 			try {
+				//docker-compose pull to get latest images
+				ProcessUtils.executeCommand(DOCKER_IMAGE_UPDATE_CMD, null);
 				ProcessBuilder processBuilder = processBuilderProvider.getProcessBuilder(TaskStates.LAUNCH_TASK, fileName);
 				this.process = processBuilder.start();
 				exitCode = process.waitFor();
@@ -126,6 +126,7 @@ public class DockerComposeExecutor implements Executor{
 			}
 		}
 	}
+	
 	
 	public void suicide(TaskID taskId){
 		killTask(this.executorDriver,taskId);

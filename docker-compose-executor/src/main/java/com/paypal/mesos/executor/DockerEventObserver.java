@@ -31,6 +31,7 @@ import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse.ContainerState;
 import com.github.dockerjava.api.model.ContainerConfig;
 import com.github.dockerjava.api.model.Event;
+import com.paypal.mesos.executor.utils.ProcessUtils;
 
 public class DockerEventObserver implements Observer<Event> {
 
@@ -45,7 +46,7 @@ public class DockerEventObserver implements Observer<Event> {
 	private boolean isFileWritten;
 
 	private DockerComposeExecutor executor;
-	
+
 	private static final Logger log = Logger.getLogger(DockerEventObserver.class);
 
 	public DockerEventObserver(DockerClient dockerClient,TaskID taskId,String fileName,DockerComposeExecutor executor) {
@@ -134,9 +135,9 @@ public class DockerEventObserver implements Observer<Event> {
 	private void sendKillSignal(){
 		log.info("sending kill signal......");
 		executor.suicide(taskId);
-		
+
 	}
-	
+
 	private void watchPids(){
 		Observable.interval(10, TimeUnit.SECONDS).subscribe(new Observer<Long>() {
 
@@ -181,7 +182,7 @@ public class DockerEventObserver implements Observer<Event> {
 			}
 		});
 	}
-	
+
 	private  boolean isProcessRunning(int pid, int timeout, TimeUnit timeunit) throws java.io.IOException {
 		String line;
 		if (OS.isFamilyWindows()) {
@@ -190,16 +191,12 @@ public class DockerEventObserver implements Observer<Event> {
 		else {
 			line = "ps -p " + pid;
 		}
-		CommandLine cmdLine = CommandLine.parse(line);
-		DefaultExecutor executor = new DefaultExecutor();
-		executor.setStreamHandler(new PumpStreamHandler(null, null, null));
-		executor.setExitValues(new int[]{0, 1});
-		ExecuteWatchdog timeoutWatchdog = new ExecuteWatchdog(timeunit.toMillis(timeout));
-		executor.setWatchdog(timeoutWatchdog);
-		int exitValue = executor.execute(cmdLine);
+		ExecuteWatchdog watchdog = ProcessUtils.createTimeoutWatchdog(timeunit, timeout);
+		int exitValue = ProcessUtils.executeCommand(line, watchdog);
 		return exitValue == 0;
 	}
 
+	
 	//TODO writing to file shouldn't be here move this to file writer
 	private File writeToFile(String fileName,Map<String,DockerEvent> updatedRootYaml) {
 		try{
