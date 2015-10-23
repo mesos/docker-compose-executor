@@ -96,7 +96,6 @@ public class DockerComposeExecutor implements Executor{
 		ExecutorDriver executorDriver;
 		TaskInfo taskInfo;
 		Process process;
-		final String DOCKER_IMAGE_UPDATE_CMD = "docker-compose -f pull";
 		
 	  public LaunchCompose(ExecutorDriver executorDriver,TaskInfo taskInfo,Process process) {
 			this.executorDriver = executorDriver;
@@ -110,7 +109,7 @@ public class DockerComposeExecutor implements Executor{
 			int exitCode = 0;
 			try {
 				//docker-compose pull to get latest images
-				ProcessUtils.executeCommand(DOCKER_IMAGE_UPDATE_CMD, null);
+				ProcessUtils.executeCommand(getImagePullCommand(), null);
 				ProcessBuilder processBuilder = processBuilderProvider.getProcessBuilder(TaskStates.LAUNCH_TASK, fileName);
 				this.process = processBuilder.start();
 				exitCode = process.waitFor();
@@ -124,6 +123,10 @@ public class DockerComposeExecutor implements Executor{
 				killTask(executorDriver,taskInfo.getTaskId());
 				sendUpdateToFramework((exitCode != 0 || isInterupted), taskInfo.getTaskId(), executorDriver);
 			}
+		}
+		
+		private String getImagePullCommand(){
+			return "docker-compose -f "+fileName+" pull";
 		}
 	}
 	
