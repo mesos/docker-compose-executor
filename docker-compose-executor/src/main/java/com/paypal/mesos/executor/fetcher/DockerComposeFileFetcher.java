@@ -5,10 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -73,6 +70,7 @@ public class DockerComposeFileFetcher implements FileFetcher{
 	}
 
 	private File writeToFile(String fileName,Map<String,Map<String,Object>> updatedRootYaml) throws IOException,FileNotFoundException{
+		log.info("fileName is:"+fileName);
 		File file = new File(fileName);
 		FileWriter fileWriter = new FileWriter(file);
 		yaml.dump(updatedRootYaml,fileWriter);

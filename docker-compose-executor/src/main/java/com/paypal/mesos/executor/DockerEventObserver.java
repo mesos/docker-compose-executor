@@ -7,16 +7,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.exec.OS;
-import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos.TaskID;
 import org.yaml.snakeyaml.DumperOptions;
@@ -134,13 +131,12 @@ public class DockerEventObserver implements Observer<Event> {
 
 	private void sendKillSignal(){
 		log.info("sending kill signal......");
-		executor.suicide(taskId);
+		executor.suicide(taskId,true);
 
 	}
 
 	private void watchPids(){
 		Observable.interval(10, TimeUnit.SECONDS).subscribe(new Observer<Long>() {
-
 			@Override
 			public void onNext(Long t) {
 				log.info("watching for pid's");

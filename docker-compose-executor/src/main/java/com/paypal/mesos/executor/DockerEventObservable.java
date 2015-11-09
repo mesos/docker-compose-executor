@@ -1,16 +1,11 @@
 package com.paypal.mesos.executor;
 
-import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 
-import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.InspectContainerResponse;
-import com.github.dockerjava.api.model.ContainerConfig;
 import com.github.dockerjava.api.model.Event;
-import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.command.EventsResultCallback;
 
 public class DockerEventObservable {

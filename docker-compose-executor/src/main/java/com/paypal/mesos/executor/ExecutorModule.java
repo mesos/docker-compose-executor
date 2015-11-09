@@ -6,7 +6,6 @@ import java.util.concurrent.Executors;
 import org.apache.mesos.Executor;
 
 import com.paypal.mesos.executor.fetcher.FileFetcher;
-import com.paypal.mesos.executor.processbuilder.ProcessBuilderProvider;
 
 import dagger.Module;
 import dagger.Provides;
@@ -14,8 +13,8 @@ import dagger.Provides;
 @Module
 public class ExecutorModule {
 
-	@Provides Executor provideDockerComposeExecutor(FileFetcher fileFetcher,ProcessBuilderProvider processBuilder,ExecutorService executorService){
-		return new DockerComposeExecutor(fileFetcher, processBuilder, executorService);
+	@Provides Executor provideDockerComposeExecutor(FileFetcher fileFetcher,ExecutorService executorService){
+		return new DockerComposeExecutor(fileFetcher, executorService);
 	}
 
 	@Provides ExecutorService provideExecutorService(){

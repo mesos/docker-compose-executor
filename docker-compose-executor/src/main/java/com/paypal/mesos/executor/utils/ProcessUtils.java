@@ -7,10 +7,13 @@ import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.exec.PumpStreamHandler;
+import org.apache.log4j.Logger;
 
 public class ProcessUtils {
 
-	public static int executeCommand(String command,ExecuteWatchdog watchdog) throws IOException{
+	private static Logger log = Logger.getLogger(ProcessUtils.class);
+	
+	public static int executeCommand(String command,ExecuteWatchdog watchdog) {
 		CommandLine cmdLine = CommandLine.parse(command);
 		DefaultExecutor executor = new DefaultExecutor();
 		executor.setStreamHandler(new PumpStreamHandler(null, null, null));
@@ -18,7 +21,14 @@ public class ProcessUtils {
 		if(watchdog != null){
 			executor.setWatchdog(watchdog);
 		}
-		int exitValue = executor.execute(cmdLine);
+		int exitValue = 0;
+		try {
+			log.info("command received is:"+command);
+			exitValue = executor.execute(cmdLine);
+		} catch (IOException e) {
+			exitValue = 1;
+			log.error("error executing command", e);
+		}
 		return exitValue;
 	}
 	
