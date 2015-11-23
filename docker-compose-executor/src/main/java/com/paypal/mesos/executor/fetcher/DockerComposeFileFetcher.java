@@ -20,7 +20,7 @@ public class DockerComposeFileFetcher implements FileFetcher{
 
 	private static final Logger log = Logger.getLogger(DockerComposeFileFetcher.class);
 	
-	private static final String GENERATED_YAML_FILE_NAME = "docker-compose$generated.yml";
+	private static final String GENERATED_YAML_FILE_NAME = "docker-compose-generated.yml";
 
 	private DockerRewriteHelper helper;
 
@@ -42,8 +42,6 @@ public class DockerComposeFileFetcher implements FileFetcher{
 		return writeToFile(outputFileName,updatedYaml);
 	}
 
-	
-	
 	private String getOutputFileName(String path){
 		if(path != null && path.split("/").length > 1){
 			String [] tokens = path.split("/");
@@ -70,7 +68,6 @@ public class DockerComposeFileFetcher implements FileFetcher{
 	}
 
 	private File writeToFile(String fileName,Map<String,Map<String,Object>> updatedRootYaml) throws IOException,FileNotFoundException{
-		log.info("fileName is:"+fileName);
 		File file = new File(fileName);
 		FileWriter fileWriter = new FileWriter(file);
 		yaml.dump(updatedRootYaml,fileWriter);

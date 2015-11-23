@@ -16,7 +16,7 @@ public class ProcessUtils {
 	public static int executeCommand(String command,ExecuteWatchdog watchdog) {
 		CommandLine cmdLine = CommandLine.parse(command);
 		DefaultExecutor executor = new DefaultExecutor();
-		executor.setStreamHandler(new PumpStreamHandler(null, null, null));
+		executor.setStreamHandler(new PumpStreamHandler(System.out, System.err, null));
 		executor.setExitValues(new int[]{0, 1});
 		if(watchdog != null){
 			executor.setWatchdog(watchdog);

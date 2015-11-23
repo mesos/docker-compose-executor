@@ -18,5 +18,9 @@ public class CommandBuilder {
 	public static String removeTask(String fileName){
 		return "docker-compose -f "+fileName+" rm --force";
 	}
+	
+	public static String linuxKill(int pid){
+		return "kill -9 "+pid;
+	}
 
 }

@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -44,6 +45,8 @@ public class DockerEventObserver implements Observer<Event> {
 
 	private DockerComposeExecutor executor;
 
+	private String fileName;
+	
 	private static final Logger log = Logger.getLogger(DockerEventObserver.class);
 
 	public DockerEventObserver(DockerClient dockerClient,TaskID taskId,String fileName,DockerComposeExecutor executor) {
@@ -51,6 +54,7 @@ public class DockerEventObserver implements Observer<Event> {
 		this.taskId = taskId;
 		map = new ConcurrentHashMap<String,DockerEvent>();
 		this.executor = executor;
+		this.fileName = fileName;
 		this.containerNames = getContainerNames(fileName);
 	}
 
@@ -100,7 +104,10 @@ public class DockerEventObserver implements Observer<Event> {
 						log.info("all containers started for task:"+taskId);
 						//write to a file
 						this.isFileWritten = true;
-						writeToFile("/tmp/details_"+taskId, map);
+						Map<String,String> composeFileNameMap = new HashMap<String,String>();
+						composeFileNameMap.put("fileName", fileName);
+						writeToFile("/tmp/file_"+executor.executorInfo.getExecutorId().getValue(), composeFileNameMap);
+						writeToFile("/tmp/details_"+executor.executorInfo.getExecutorId().getValue(), map);
 						//start watching for all the pids
 						watchPids();
 					}
@@ -194,7 +201,7 @@ public class DockerEventObserver implements Observer<Event> {
 
 	
 	//TODO writing to file shouldn't be here move this to file writer
-	private File writeToFile(String fileName,Map<String,DockerEvent> updatedRootYaml) {
+	private File writeToFile(String fileName,Map<String,? extends Object> updatedRootYaml) {
 		try{
 			File file = new File(fileName);
 			if(!file.exists()){
@@ -234,7 +241,7 @@ public class DockerEventObserver implements Observer<Event> {
 		return set;
 	}
 
-	private Map<String,Map<String,Object>> readFromFile(String path) {
+	public  Map<String,Map<String,Object>> readFromFile(String path) {
 		try{
 			FileReader fileReader = new FileReader(new File(path));
 			@SuppressWarnings("unchecked")

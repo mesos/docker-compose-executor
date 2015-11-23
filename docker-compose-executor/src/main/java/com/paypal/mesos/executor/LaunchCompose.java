@@ -23,7 +23,7 @@ public class LaunchCompose implements Runnable{
 		ProcessUtils.executeCommand(pullCommand, null);
 		String launchCommand = CommandBuilder.launchTask(fileName);
 		exitCode = ProcessUtils.executeCommand(launchCommand, null);
-		executor.suicide(taskId,exitCode == 0);
+		executor.suicide(taskId,exitCode != 0);
 	}
 
 

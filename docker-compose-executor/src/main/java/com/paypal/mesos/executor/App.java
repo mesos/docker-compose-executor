@@ -10,9 +10,9 @@ public class App {
 	
 	public static void main(String[] args) {
 		log.warn("Main method invoked");
-		System.out.println("Main method invoked");
 		ExecutorComponent executorComponent = DaggerExecutorComponent.builder().build();
 		Executor executor = executorComponent.getExecutor();
+		log.warn("executor is null:"+(executor == null));
 		new MesosExecutorDriver(executor).run();
 	}
 	
