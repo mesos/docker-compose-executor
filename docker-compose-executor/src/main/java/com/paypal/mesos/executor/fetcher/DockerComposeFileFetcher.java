@@ -10,6 +10,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.apache.mesos.Protos.ExecutorInfo;
 import org.apache.mesos.Protos.Label;
 import org.apache.mesos.Protos.Labels;
 import org.apache.mesos.Protos.TaskInfo;
@@ -25,6 +26,8 @@ public class DockerComposeFileFetcher implements FileFetcher{
 	private DockerRewriteHelper helper;
 
 	private Yaml yaml;
+	
+	ExecutorInfo info;
 
 	@Inject
 	public DockerComposeFileFetcher(DockerRewriteHelper helper,Yaml yaml) {

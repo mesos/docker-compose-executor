@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import org.apache.log4j.Logger;
 import org.apache.mesos.Protos.Resource;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.Value.Range;
@@ -16,7 +15,6 @@ import org.apache.mesos.Protos.Value.Ranges;
 
 public class DockerRewriteHelper {
 
-	private static final Logger log = Logger.getLogger(DockerRewriteHelper.class);
 	
 	private static final String CONTAINER_NAME = "container_name";
 	private static final String NETWORK = "net";

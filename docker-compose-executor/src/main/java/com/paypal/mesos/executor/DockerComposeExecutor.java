@@ -1,15 +1,9 @@
 package com.paypal.mesos.executor;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import javax.inject.Inject;
 
@@ -23,143 +17,134 @@ import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
-import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.Yaml;
 
-import rx.subjects.PublishSubject;
+import rx.Observable;
+import rx.Subscriber;
+import rx.schedulers.Schedulers;
 
-import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.model.Event;
-import com.github.dockerjava.core.DockerClientBuilder;
+import com.paypal.mesos.executor.config.Config;
 import com.paypal.mesos.executor.fetcher.FileFetcher;
+import com.paypal.mesos.executor.utils.FileUtils;
 import com.paypal.mesos.executor.utils.ProcessUtils;
 
 public class DockerComposeExecutor implements Executor{
 
 	private static final Logger log = Logger.getLogger(DockerComposeExecutor.class);
 	
-	private ExecutorService executorService = null;
+	private static final String FILE_NAME = "fileName";
 
 	private FileFetcher fileFetcher;
 
 	private String fileName;
 
 	private ExecutorDriver executorDriver;
+
+	private DockerEventStreamListener streamListener;
 	
-	private volatile boolean hasShutdownIntiated;
+	private DockerEventObserver eventObserver;
 	
-	private Lock lock;
+	private DockerComposeProcessObserver processObserver;
 	
-	ExecutorInfo executorInfo;
+	private ExecutorInfo executorInfo;
 	
 	@Inject
-	public DockerComposeExecutor(FileFetcher fileFetcher,ExecutorService executorService){
+	public DockerComposeExecutor(FileFetcher fileFetcher,DockerEventStreamListener streamListener,
+			DockerEventObserver eventObserver,DockerComposeProcessObserver processObserver){
 		this.fileFetcher = fileFetcher;
-		this.executorService = executorService;
-		this.lock = new ReentrantLock();
+		this.streamListener = streamListener;
+		this.eventObserver = eventObserver;
+		this.processObserver = processObserver;
 	}
-
 
 	@Override
 	public void launchTask(ExecutorDriver executorDriver, TaskInfo taskInfo) {
 		TaskID taskId = taskInfo.getTaskId();
+		eventObserver.init(taskId,getDetailsFile(), this);
+		processObserver.init(this, taskId);
 		sendTaskStatusUpdate(executorDriver,taskId,TaskState.TASK_STARTING);
 		try {
 			File file = fileFetcher.getFile(taskInfo);
 			this.fileName = file.getAbsolutePath();
-			startWatchingDockerEvents(taskId);
-			startProcess(taskId);
+			writeFileNameForHook();
+			startListeningToDockerBus(taskId);
+			updateImagesAndStartCompose(taskId);
+			sendTaskStatusUpdate(executorDriver,taskId,TaskState.TASK_RUNNING);
 		}catch (Exception e) {
+			log.error("exception while launching process",e);
 			sendTaskStatusUpdate(executorDriver,taskId,TaskState.TASK_FAILED);
-			log.warn("exception while launching process"+e.getMessage());
 		} 
-		sendTaskStatusUpdate(executorDriver,taskId,TaskState.TASK_RUNNING);
 	}
 
-	//TODO instead of a seperate thread inside of observable,schedule observer on a differenct thread
-	private void startWatchingDockerEvents(TaskID taskId){
-		ExecutorService executorService = Executors.newCachedThreadPool();
-		PublishSubject<Event> subject = PublishSubject.create();
-		DockerClient dockerClient = DockerClientBuilder.getInstance("unix:///var/run/docker.sock").build();
-		DockerEventObservable observable = new DockerEventObservable(executorService,dockerClient);
-		DockerEventObserver observer = new DockerEventObserver(dockerClient,taskId,this.fileName,this);
-		subject.subscribe(observer);
-		observable.captureContainerDetails(subject);
+	private void writeFileNameForHook(){
+		Map<String,Object> map = new HashMap<String,Object>();
+		map.put(FILE_NAME,this.fileName);
+		FileUtils.writeToFile(getHooksCleanupFile(), map);
+	}
+	
+	private void startListeningToDockerBus(TaskID taskId){
+		streamListener.getDockerEvents().observeOn(Schedulers.newThread()).subscribeOn(Schedulers.newThread()).subscribe(eventObserver);
 	}
 	 
-	private void startProcess(TaskID taskId){
-		LaunchCompose compose = new LaunchCompose(this,fileName,taskId);
-		executorService.execute(compose);
+	private void updateImagesAndStartCompose(TaskID taskId){
+		Observable.create(new Observable.OnSubscribe<Integer>() {
+			@Override
+			public void call(Subscriber<? super Integer> subscriber) {
+				String pullCommand = CommandBuilder.pullImages(fileName);
+				int imageUpdateExitCode = ProcessUtils.executeCommand(pullCommand, null);
+				//TODO do this based on --ignore-pull-failures flag set in config
+				if(imageUpdateExitCode != 0){
+					log.error("unable to pull updated images trying to bring the pod up with existing images");
+				}
+				String launchCommand = CommandBuilder.launchTask(fileName);
+				int exitCode = ProcessUtils.executeCommand(launchCommand, null);
+				subscriber.onNext(exitCode);
+				subscriber.onCompleted();
+			}
+		}).subscribeOn(Schedulers.newThread()).subscribe(processObserver);
 	}
 	
-	public void suicide(TaskID taskId,boolean hasTaskFailed){
-		lock.lock();
-		boolean result = cleanUp();
-		sendUpdateToFramework(hasTaskFailed || result, taskId, executorDriver);
-		lock.unlock();
-		executorService.shutdown();
-		System.exit(0);
+	public void suicide(TaskID taskId,int exitCode){
+		int stopContainers = cleanUp();
+		if(exitCode == 0 && stopContainers == 0){
+			sendTaskStatusUpdate(executorDriver, taskId, TaskState.TASK_FINISHED);
+			System.exit(0);
+		}else{
+			sendTaskStatusUpdate(executorDriver, taskId, TaskState.TASK_FAILED);
+			System.exit(1);
+		}
 	}
+	
 	
 	/**
-	 * shutdown executor service
 	 * stop docker-compose
 	 * force remove docker images
 	 * @return killing compose and removing all images are successful
 	 */
-	private boolean cleanUp(){
-		String killTask = CommandBuilder.killTask(fileName);
-		int killResult = ProcessUtils.executeCommand(killTask, ProcessUtils.createTimeoutWatchdog(TimeUnit.SECONDS, 30));
-		String removeTask = CommandBuilder.removeTask(fileName);
-		int removeTaskResult = ProcessUtils.executeCommand(removeTask, ProcessUtils.createTimeoutWatchdog(TimeUnit.SECONDS, 30));
-		boolean isCleanupDone = killResult == 0 && removeTaskResult == 0;
-		if(!isCleanupDone){
-			log.info("starting linux kill");
-			isCleanupDone = linuxKill("/tmp/details_"+executorInfo.getExecutorId().getValue());
+	private int cleanUp(){
+		String killTask = CommandBuilder.stopTask(fileName);
+		int exitCode = ProcessUtils.executeCommand(killTask,null);
+		if(exitCode != 0 ){
+			exitCode = linuxKill(getDetailsFile());
 		}
-		return (isCleanupDone);
+		return exitCode;
 	}
 	
-	private boolean linuxKill(String fileName){
-		try{
-			File file = new File(fileName);
-			if(!file.exists()){
-				return true;
-			}
-			FileReader fileReader = new FileReader(file);
-			@SuppressWarnings("unchecked")
-			Map<String,DockerEvent>yamlMap = (Map<String,DockerEvent>)provideYaml().load(fileReader);
-			fileReader.close();
-			boolean result = true;
-			for(Map.Entry<String, DockerEvent> entry:yamlMap.entrySet()){
-				int pid = entry.getValue().getPid();
-				if(pid != 0){
-					String command = CommandBuilder.linuxKill(pid);
-					int exitCode = ProcessUtils.executeCommand(command, null);
-					result = result && (exitCode == 0);
-				}
-			}
-			return result;
-		}catch(FileNotFoundException e){
-			log.warn("not able to write to file:"+e);
-		}catch(IOException e){
-			log.warn("IO Exception:"+e);
+	private int linuxKill(String fileName){
+		List<Integer> pids = FileUtils.getPids(fileName);
+		int exitCode = 1;
+		if(pids.size() > 0){
+			String command = CommandBuilder.linuxKill(pids);
+		    exitCode = ProcessUtils.executeCommand(command, null);
 		}
-		return false;
+		return exitCode;
 	}
 	
-	private Yaml provideYaml(){
-		DumperOptions options=new DumperOptions();
-		options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-		return new Yaml(options);
+	private String getDetailsFile(){
+		return Config.DOCKER_DETAILS_FILE_PREFIX+executorInfo.getExecutorId().getValue();
 	}
 	
-	private void sendUpdateToFramework(boolean hasTaskFailed,TaskID taskId,ExecutorDriver executorDriver){
-		if(hasTaskFailed){
-			sendTaskStatusUpdate(executorDriver,taskId, TaskState.TASK_FAILED);
-		}else{
-			sendTaskStatusUpdate(executorDriver,taskId, TaskState.TASK_FINISHED);
-		}
+	private String getHooksCleanupFile(){
+		return Config.DOCKER_FILE_PREFIX+executorInfo.getExecutorId().getValue();
 	}
 	
 	private void sendTaskStatusUpdate(ExecutorDriver executorDriver,TaskID taskId,TaskState taskState){
@@ -169,7 +154,8 @@ public class DockerComposeExecutor implements Executor{
 	
 	@Override
 	public void killTask(ExecutorDriver executorDriver, TaskID taskId) {
-		suicide(taskId,false);
+		log.info("kill task called for taskId:"+taskId.getValue());
+		suicide(taskId,0);
 	}
 	
 	@Override
@@ -204,7 +190,7 @@ public class DockerComposeExecutor implements Executor{
 	@Override
 	public void shutdown(ExecutorDriver executorDriver) {
 		log.debug("shutting down executor");
-		suicide(null, false);
+		suicide(null, 0);
 	}
 
 }
