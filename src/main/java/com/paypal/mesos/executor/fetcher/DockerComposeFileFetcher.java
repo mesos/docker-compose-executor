@@ -36,11 +36,11 @@ public class DockerComposeFileFetcher implements FileFetcher{
 	}
 
 	@Override
-	public File getFile(TaskInfo taskInfo) throws FileNotFoundException,IOException{
+	public File getFile(ExecutorInfo executorInfo,TaskInfo taskInfo) throws FileNotFoundException,IOException{
 		String path = getFileName(taskInfo);
 		validateFile(path);
 		Map<String,Map<String,Object>> rootYaml = readFromFile(path);
-		Map<String,Map<String,Object>> updatedYaml = helper.updateYaml(rootYaml,taskInfo);
+		Map<String,Map<String,Object>> updatedYaml = helper.updateYaml(rootYaml,taskInfo,executorInfo);
 		String outputFileName = getOutputFileName(path);
 		return writeToFile(outputFileName,updatedYaml);
 	}
