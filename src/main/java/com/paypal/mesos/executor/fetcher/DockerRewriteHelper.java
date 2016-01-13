@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import org.apache.mesos.Protos.ExecutorInfo;
 import org.apache.mesos.Protos.Resource;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.Value.Range;
@@ -23,18 +24,18 @@ public class DockerRewriteHelper {
 	private static final String PORTS = "ports";
 	private static final String LABELS = "labels";
 	
-	public Map<String,Map<String,Object>> updateYaml(Map<String,Map<String,Object>> yamlMap,TaskInfo taskInfo){
+	public Map<String,Map<String,Object>> updateYaml(Map<String,Map<String,Object>> yamlMap,TaskInfo taskInfo,ExecutorInfo executorInfo){
 		if(yamlMap == null || yamlMap.isEmpty()){
 			return null;
 		}
 		Map<String,Map<String,Object>> resultantContainerMap = new HashMap<String,Map<String,Object>>();
 		String taskId = taskInfo.getTaskId().getValue();
 		Iterator<Long> portIterator = getPortMappingIterator(taskInfo);
-		
+		String executorId = executorInfo.getExecutorId().getValue();
 		for(Map.Entry<String, Map<String,Object>> containerEntry:yamlMap.entrySet()){
 			String key = containerEntry.getKey();
 			Map<String,Object> containerValue = containerEntry.getValue();
-			Map<String,Object> updatedContainerValues = updateContainerValue(taskId,containerValue,portIterator);
+			Map<String,Object> updatedContainerValues = updateContainerValue(executorId,taskId,containerValue,portIterator);
 			String updatedKey = prefixTaskId(taskId, key);
 			resultantContainerMap.put(updatedKey,updatedContainerValues);
 		}
@@ -42,7 +43,7 @@ public class DockerRewriteHelper {
 	}
 
 
-	private Map<String,Object> updateContainerValue(String taskId,Map<String,Object> containerDetails,Iterator<Long> portIterator){
+	private Map<String,Object> updateContainerValue(String executorId,String taskId,Map<String,Object> containerDetails,Iterator<Long> portIterator){
 
 		if(containerDetails.containsKey(CONTAINER_NAME)){
 			String containerValue = prefixTaskId(taskId,String.valueOf(containerDetails.get(CONTAINER_NAME)));
@@ -91,8 +92,13 @@ public class DockerRewriteHelper {
 			containerDetails.put(PORTS, updatedPorts);
 		}
 		
-		Map<String,String> taskIdLabel = new HashMap<String, String>();
+		@SuppressWarnings("unchecked")
+		Map<String,String> taskIdLabel = (Map<String,String>)containerDetails.get(LABELS);
+		if(taskIdLabel == null){
+			taskIdLabel = new HashMap<String,String>();
+		}
 		taskIdLabel.put("taskId", taskId);
+		taskIdLabel.put("executorId",executorId);
 		containerDetails.put(LABELS, taskIdLabel);
 		
 		return containerDetails;

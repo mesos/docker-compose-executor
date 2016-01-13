@@ -4,10 +4,8 @@ import javax.inject.Singleton;
 
 import org.apache.mesos.Executor;
 
-import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.core.DockerClientBuilder;
-import com.paypal.mesos.executor.config.Config;
 import com.paypal.mesos.executor.fetcher.FileFetcher;
+import com.paypal.mesos.executor.monitoring.ComposeMonitor;
 
 import dagger.Module;
 import dagger.Provides;
@@ -15,26 +13,16 @@ import dagger.Provides;
 @Module
 public class ExecutorModule {
 
-	@Provides Executor provideDockerComposeExecutor(FileFetcher fileFetcher,DockerEventStreamListener streamListener,
-			DockerEventObserver eventObserver,DockerComposeProcessObserver processObserver){
-		return new DockerComposeExecutor(fileFetcher,streamListener,eventObserver,processObserver);
+	@Provides Executor provideDockerComposeExecutor(FileFetcher fileFetcher,DockerComposeProcessObserver processObserver,ComposeMonitor composeMonitor){
+		return new DockerComposeExecutor(fileFetcher,processObserver,composeMonitor);
 	}
 	
-	@Provides @Singleton DockerEventStreamListener provideDockerEventStreamListener(DockerClient dockerClient){
-		return new DockerEventStreamListener(dockerClient);
-	}
-	
-	@Provides @Singleton DockerEventObserver provideDockerEventObserver(DockerClient dockerClient){
-		return new DockerEventObserver(dockerClient);
+	@Provides @Singleton ComposeMonitor provideComposeMonitor(){
+		return new ComposeMonitor();
 	}
 	
 	@Provides @Singleton DockerComposeProcessObserver provideDockerComposeProcessObserver(){
 		return new DockerComposeProcessObserver();
 	}
-	
-	@Provides @Singleton DockerClient provideDockerClient(){
-		return  DockerClientBuilder.getInstance(Config.DOCKER_SERVER_URL).build();
-	}
-	
 
 }
