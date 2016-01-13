@@ -1,0 +1,12 @@
+{
+  "libraries": [
+    {
+      "file": "@abs_top_builddir@/.libs/libtesthook.@LIB_EXT@",
+      "modules": [
+        {
+          "name": "org_apache_mesos_DockerComposeHook"
+        }
+      ]
+    }
+  ]
+}
