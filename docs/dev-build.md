@@ -21,7 +21,25 @@ Use the fat jar generated with all the dependencies.
   COMPOSE_CLASS_NAME=com.paypal.mesos.executor.App
   java -cp ${COMPOSE_JAR_NAME} ${COMPOSE_CLASS_NAME}
 ```
+> Create a new marathon app
+```
+1.Create a marathon app POST /v2/apps
+Sample payload:
 
+{
+    "id": "docker-compose-demo",
+    "cmd": "",
+    "cpus": 1.0,
+    "mem": 64.0,
+    "ports":[0,0,0],
+    "instances": 1,
+    "executor":"<path to your shell script>",
+  	"labels": {
+        "fileName": "<path to your docker-compose.yml>"
+    },
+  "uris":["<url where you mesos-slave should download your files from>"]
+}
+```
 
 
 ---
