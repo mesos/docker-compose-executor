@@ -23,9 +23,6 @@ Use the fat jar generated with all the dependencies.
 ```
 > Create a new marathon app
 ```
-1.Create a marathon app POST /v2/apps
-Sample payload:
-
 {
     "id": "docker-compose-demo",
     "cmd": "",
