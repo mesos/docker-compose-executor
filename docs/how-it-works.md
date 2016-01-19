@@ -11,10 +11,13 @@ Docker Compose isn't flexible with restart polocies for the whole pod. Executor 
 
 ## What exactly is done ?
 
-We use mesos labels(fileName) to read the location of your docker-compose file.
+We use mesos labels(fileName) to read the location of docker-compose file.
+
 We generate a new docker-compose file resolving all the conflicts
+
 We tag each container with specific taskId and executorId and use this information to clean up containers.
-The pod is monitored at a configurable interval and will be destroyed if restart policy of any particular container is voilated.
+
+The pod is monitored at a configurable interval and will be destroyed if restart policy of any  container is voilated.
 
 We leverage mesos hooks to make sure containers are cleaned if executor is terminated.
 
