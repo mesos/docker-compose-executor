@@ -10,6 +10,7 @@ The project goal is to model a pod of containers with docker-compose and launch 
 
 ## Getting started
 
+* [Getting Started](docs/getting-started.md)
 * [How Docker Compose Executor works](docs/how-it-works.md)
 * [Developing Docker Compose Executor](docs/dev-build.md)
 
