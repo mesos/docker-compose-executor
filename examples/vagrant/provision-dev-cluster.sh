@@ -41,7 +41,6 @@ apt-get -y install \
     build-essential                         \
    autoconf                                \
    automake                                \
-   cmake=3.2.2-2ubuntu2~ubuntu14.04.1~ppa1 \
    ca-certificates                         \
    gdb                                     \
    wget                                    \
@@ -86,13 +85,13 @@ function install_marathon {
 }
 
 function build_docker_compose_executor {
-   sudo mvn -f /home/vagrant/aurora/pom.xml clean package -U
-   sudo chmod 777 /home/vagrant/aurora/target/docker-compose-executor-0.0.1-SNAPSHOT-jar-with-dependencies.jar    
+   sudo mvn -f /home/vagrant/marathon/pom.xml clean package -U
+   sudo chmod 777 /home/vagrant/marathon/target/docker-compose-executor-0.0.1-SNAPSHOT-jar-with-dependencies.jar    
 }
 
 function install_cluster_config {
-  mkdir -p /etc/aurora
-  ln -sf /home/vagrant/aurora/examples/vagrant/clusters.json /etc/aurora/clusters.json
+  mkdir -p /etc/marathon
+  ln -sf /home/vagrant/marathon/examples/vagrant/clusters.json /etc/marathon/clusters.json
 }
 
 function install_ssh_config {
@@ -138,7 +137,7 @@ function start_services {
 function prepare_sources {
   cat > /usr/local/bin/update-sources <<EOF
 #!/bin/bash
-rsync -urzvhl /vagrant/ /home/vagrant/aurora \
+rsync -urzvhl /vagrant/ /home/vagrant/marathon \
     --filter=':- /vagrant/.gitignore' \
     --exclude=.git \
     --delete
