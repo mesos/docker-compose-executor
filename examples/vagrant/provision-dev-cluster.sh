@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9
-echo deb https://get.docker.com/ubuntu docker main > /etc/apt/sources.list.d/docker.list
+sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
+echo deb https://apt.dockerproject.org/repo ubuntu-trusty main > /etc/apt/sources.list.d/docker.list
 
 apt-get update -q --fix-missing
 apt-get -qy install software-properties-common
@@ -32,7 +31,7 @@ apt-get -y install \
     libcurl4-nss-dev \
     libsasl2-dev \
     libsvn-dev \
-    lxc-docker \
+    docker-engine \
     openjdk-8-jdk \
     python-dev \
     zookeeperd \

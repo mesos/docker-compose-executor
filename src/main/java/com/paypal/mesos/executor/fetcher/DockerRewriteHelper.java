@@ -18,27 +18,34 @@ public class DockerRewriteHelper {
 
 	
 	private static final String CONTAINER_NAME = "container_name";
-	private static final String NETWORK = "net";
+	private static final String NETWORK = "network_mode";
 	private static final String LINKS = "links";
+	private static final String DEPENDS_ON = "depends_on";
 	private static final String VOLUMES_FROM = "volumes_from";
 	private static final String PORTS = "ports";
 	private static final String LABELS = "labels";
+	private static final String SERVICES = "services";
 	
-	public Map<String,Map<String,Object>> updateYaml(Map<String,Map<String,Object>> yamlMap,TaskInfo taskInfo,ExecutorInfo executorInfo){
+	public Map<String,Map<String,Map<String,Object>>> updateYaml(Map<String,Map<String,Map<String,Object>>> yamlMap,TaskInfo taskInfo,ExecutorInfo executorInfo){
 		if(yamlMap == null || yamlMap.isEmpty()){
 			return null;
 		}
-		Map<String,Map<String,Object>> resultantContainerMap = new HashMap<String,Map<String,Object>>();
+		Map<String,Map<String,Map<String,Object>>> resultantContainerMap = new HashMap<String,Map<String,Map<String,Object>>>();
+		resultantContainerMap.putAll(yamlMap);
 		String taskId = taskInfo.getTaskId().getValue();
 		Iterator<Long> portIterator = getPortMappingIterator(taskInfo);
 		String executorId = executorInfo.getExecutorId().getValue();
-		for(Map.Entry<String, Map<String,Object>> containerEntry:yamlMap.entrySet()){
+		Map<String,Map<String,Object>> services = yamlMap.get(SERVICES);
+		Map<String,Map<String,Object>> resultantServicesMap = new HashMap<String,Map<String,Object>>();
+		for(Map.Entry<String, Map<String,Object>> containerEntry:services.entrySet()){
+			
 			String key = containerEntry.getKey();
 			Map<String,Object> containerValue = containerEntry.getValue();
 			Map<String,Object> updatedContainerValues = updateContainerValue(executorId,taskId,containerValue,portIterator);
 			String updatedKey = prefixTaskId(taskId, key);
-			resultantContainerMap.put(updatedKey,updatedContainerValues);
+			resultantServicesMap.put(updatedKey,updatedContainerValues);
 		}
+		resultantContainerMap.put(SERVICES, resultantServicesMap);
 		return resultantContainerMap;
 	}
 
@@ -51,24 +58,37 @@ public class DockerRewriteHelper {
 		}
 
 		Object networkValue = containerDetails.get(NETWORK);
-		if(networkValue !=null && (String.valueOf(networkValue).contains("container"))){
+		if(networkValue !=null && (String.valueOf(networkValue).contains("service"))){
 			String networkValueString = String.valueOf(networkValue);
 			String [] split = networkValueString.split(":");
 			String containerName = split[split.length-1];
-			containerDetails.put(NETWORK, "container:"+prefixTaskId(taskId, containerName));	
+			containerDetails.put(NETWORK, "service:"+prefixTaskId(taskId, containerName));	
 		}
-
+		System.out.println("In update container values");
 		Object linkValues = containerDetails.get(LINKS);
 		if(linkValues != null){
+			System.out.println("links present");
 			List<String> updatedLinks = new ArrayList<String>();
 			@SuppressWarnings("unchecked")
 			List<String> links = (ArrayList<String>)linkValues;
 			for(String link:links){
 				updatedLinks.add(prefixTaskId(taskId, link));
+				System.out.println(prefixTaskId(taskId, link));
 			}
 			containerDetails.put(LINKS, updatedLinks);
 		}
 
+		Object dependson = containerDetails.get(DEPENDS_ON);
+		if(dependson != null){
+			List<String> updatedLinks = new ArrayList<String>();
+			@SuppressWarnings("unchecked")
+			List<String> links = (ArrayList<String>)dependson;
+			for(String link:links){
+				updatedLinks.add(prefixTaskId(taskId, link));
+			}
+			containerDetails.put(DEPENDS_ON, updatedLinks);
+		}
+		
 		Object volumesFromValues = containerDetails.get(VOLUMES_FROM);
 		if(volumesFromValues != null){
 			List<String> updatedVolumesFrom = new ArrayList<String>();

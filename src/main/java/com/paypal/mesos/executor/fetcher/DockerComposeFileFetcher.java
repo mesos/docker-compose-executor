@@ -39,8 +39,8 @@ public class DockerComposeFileFetcher implements FileFetcher{
 	public File getFile(ExecutorInfo executorInfo,TaskInfo taskInfo) throws FileNotFoundException,IOException{
 		String path = getFileName(taskInfo);
 		validateFile(path);
-		Map<String,Map<String,Object>> rootYaml = readFromFile(path);
-		Map<String,Map<String,Object>> updatedYaml = helper.updateYaml(rootYaml,taskInfo,executorInfo);
+		Map<String,Map<String,Map<String,Object>>> rootYaml = readFromFile(path);
+		Map<String,Map<String,Map<String,Object>>> updatedYaml = helper.updateYaml(rootYaml,taskInfo,executorInfo);
 		String outputFileName = getOutputFileName(path);
 		return writeToFile(outputFileName,updatedYaml);
 	}
@@ -70,7 +70,7 @@ public class DockerComposeFileFetcher implements FileFetcher{
 		return null;
 	}
 
-	private File writeToFile(String fileName,Map<String,Map<String,Object>> updatedRootYaml) throws IOException,FileNotFoundException{
+	private File writeToFile(String fileName,Map<String,Map<String,Map<String,Object>>> updatedRootYaml) throws IOException,FileNotFoundException{
 		File file = new File(fileName);
 		FileWriter fileWriter = new FileWriter(file);
 		yaml.dump(updatedRootYaml,fileWriter);
@@ -79,10 +79,10 @@ public class DockerComposeFileFetcher implements FileFetcher{
 		return file;
 	}
 
-	private Map<String,Map<String,Object>> readFromFile(String path) throws FileNotFoundException,IOException{
+	private Map<String,Map<String,Map<String,Object>>> readFromFile(String path) throws FileNotFoundException,IOException{
 		FileReader fileReader = new FileReader(new File(path));
 		@SuppressWarnings("unchecked")
-		Map<String,Map<String,Object>>yamlMap = (Map<String,Map<String,Object>>)yaml.load(fileReader);
+		Map<String,Map<String,Map<String,Object>>> yamlMap = (Map<String,Map<String,Map<String,Object>>>)yaml.load(fileReader);
 		fileReader.close();
 		return yamlMap;
 	}
