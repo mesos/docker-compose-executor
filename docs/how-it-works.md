@@ -7,7 +7,7 @@ The goal is to make sure all docker network and storage plugins work out of the 
 
 Running multiple pods on the same host may create many conflicts (containerId's , ports etc.). Executor takes care of resolving these conflicts.
 
-Docker Compose isn't flexible with restart polocies for the whole pod. Executor honors restart polocies of each independent cotainer and destroy's the pod if it finds a voilation. Goal is to allow developers to plugin their own version of pod monitor.
+Docker Compose isn't flexible with restart polocies for the whole pod. Executor honors restart policies of each independent container and destroy's the pod if it finds a violation. Goal is to allow developers to plugin their own version of pod monitor.
 
 ## What exactly is done ?
 
