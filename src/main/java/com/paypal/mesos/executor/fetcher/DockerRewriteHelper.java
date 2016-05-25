@@ -72,7 +72,7 @@ public class DockerRewriteHelper {
 			@SuppressWarnings("unchecked")
 			List<String> links = (ArrayList<String>)linkValues;
 			for(String link:links){
-				updatedLinks.add(prefixTaskId(taskId, link));
+				updatedLinks.add(prefixTaskId(taskId, link)+":"+link);
 				System.out.println(prefixTaskId(taskId, link));
 			}
 			containerDetails.put(LINKS, updatedLinks);
