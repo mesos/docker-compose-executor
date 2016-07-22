@@ -67,7 +67,11 @@
 			<artifactId>commons-exec</artifactId>
 			<version>1.3</version>
 		</dependency>
-
+		<dependency>
+			<groupId>ro.fortsoft.pf4j</groupId>
+			<artifactId>pf4j</artifactId>
+			<version>0.13.1</version>
+		</dependency>
 	</dependencies>
 
 
@@ -121,6 +125,14 @@
 							<mainClass>com.paypal.mesos.executor.App</mainClass>
 						</manifest>
 					</archive>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-deploy-plugin</artifactId>
+				<version>3.1</version>
+				<configuration>
+				<skip>true</skip>
 				</configuration>
 			</plugin>
 		</plugins>

@@ -2,6 +2,7 @@ package com.paypal.mesos.executor.monitoring;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
@@ -33,24 +34,25 @@ public class ComposeMonitor {
 		return monitor.subscribe(action);
 	}
 
-	public void startMonitoring(final String fileName){
-		log.info("start montioring is called:"+fileName);
+	public void startMonitoring(final List<String> fileNames){
+		log.info("start montioring is called:"+fileNames);
 		Observable.interval(Config.POD_MONITOR_INTERVAL, TimeUnit.MILLISECONDS).subscribe(new Observer<Long>() {
 
 			@Override
 			public void onCompleted() {
-				log.info("monitor thread on completed :completed monitoring compose for file:"+fileName);
+				log.info("monitor thread on completed :completed monitoring compose for file:"+fileNames);
 			}
 
 			@Override
 			public void onError(Throwable e) {
-				log.error("monitor thread on error: encountred an error monitoring:"+fileName,e);
+				log.error("monitor thread on error: encountred an error monitoring:"+fileNames,e);
 				monitor.onNext(1);
 			}
 
 			@Override
 			public void onNext(Long t) {
-				List<String> containerIds = getContainerIds(fileName);
+				List<String> containerIds = getContainerIds(fileNames);
+				System.out.println(Arrays.toString(containerIds.toArray()));
 				if(containerIds != null){
 					for(String containerId:containerIds){
 						ContainerDetails details = getContainerDetails(containerId);
@@ -67,9 +69,9 @@ public class ComposeMonitor {
 
 	}
 
-	public List<String> getContainerIds(String fileName){
+	public List<String> getContainerIds(List<String> fileNames){
 		List<String> containerIds = new ArrayList<String>();
-		String listConatinerIdsCommand = CommandBuilder.getContainerIds(fileName);
+		String listConatinerIdsCommand = CommandBuilder.getContainerIds(fileNames);
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		int exitCode = ProcessUtils.executeCommand(listConatinerIdsCommand, null, outputStream, null, null);
 		if(exitCode == 0){
