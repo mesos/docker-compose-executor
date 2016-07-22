@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.ExecutorInfo;
 import org.apache.mesos.Protos.Resource;
 import org.apache.mesos.Protos.TaskInfo;
@@ -26,7 +27,10 @@ public class ComposeRewriteHelper {
 	private static final String LABELS = "labels";
 	private static final String SERVICES = "services";
 	
-	public Map<String,Map<String,Map<String,Object>>> updateYaml(Map<String,Map<String,Map<String,Object>>> yamlMap,TaskInfo taskInfo,ExecutorInfo executorInfo){
+	public Map<String,Map<String,Map<String,Object>>> updateYaml(Map<String,Map<String,Map<String,Object>>> yamlMap,
+																 TaskInfo taskInfo,
+																 ExecutorInfo executorInfo){
+
 		System.out.println(" ############ STARTING updateYaml  ################");
 		if(yamlMap == null || yamlMap.isEmpty()){
 			return null;
@@ -47,7 +51,10 @@ public class ComposeRewriteHelper {
 			
 			String key = containerEntry.getKey();
 			Map<String,Object> containerValue = containerEntry.getValue();
-			Map<String,Object> updatedContainerValues = updateContainerValue(executorId,taskId,containerValue,portIterator);
+			Map<String,Object> updatedContainerValues = updateContainerValue(executorId,
+				taskInfo,
+				containerValue,
+				portIterator);
 			String updatedKey = prefixTaskId(taskId, key);
 			resultantServicesMap.put(updatedKey,updatedContainerValues);
 		}
@@ -56,8 +63,12 @@ public class ComposeRewriteHelper {
 	}
 
 
-	private Map<String,Object> updateContainerValue(String executorId,String taskId,Map<String,Object> containerDetails,Iterator<Long> portIterator){
+	private Map<String,Object> updateContainerValue(String executorId,
+													TaskInfo taskInfo,
+													Map<String,Object> containerDetails,
+													Iterator<Long> portIterator){
 
+		String taskId = taskInfo.getTaskId().getValue();
 		System.out.println(" ##################  Starting updateContainerValue   ############### ");
 		System.out.println(" executorId: " + executorId + "  taskId: " + taskId + " containerDetails: " + containerDetails.toString() + " portIterator: " + portIterator.toString());
 
@@ -134,6 +145,11 @@ public class ComposeRewriteHelper {
 		}
 		taskIdLabel.put("taskId", taskId);
 		taskIdLabel.put("executorId",executorId);
+
+		for(Protos.Label l : taskInfo.getLabels().getLabelsList()) {
+			taskIdLabel.put(l.getKey(), l.getValue());
+		}
+
 		System.out.println(" updated taskIdLabel: "+ taskIdLabel);
 		containerDetails.put(LABELS, taskIdLabel);
 		
