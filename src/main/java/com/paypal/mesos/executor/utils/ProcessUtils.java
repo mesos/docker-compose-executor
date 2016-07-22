@@ -21,6 +21,7 @@ public class ProcessUtils {
 	}
 	
 	public static int executeCommand(String command,ExecuteWatchdog watchdog,OutputStream outputStream,OutputStream errorStream,InputStream inputStream){
+		System.out.println(" command: "+command);
 		CommandLine cmdLine = CommandLine.parse(command);
 		DefaultExecutor executor = new DefaultExecutor();
 		if(outputStream == null){
@@ -41,6 +42,8 @@ public class ProcessUtils {
 			exitValue = 1;
 			log.error("error executing command", e);
 		}
+
+		System.out.println(" output: "+outputStream.toString());
 		return exitValue;
 	}
 	

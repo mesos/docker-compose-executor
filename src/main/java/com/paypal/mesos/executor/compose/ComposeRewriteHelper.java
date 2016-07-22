@@ -1,4 +1,4 @@
-package com.paypal.mesos.executor.fetcher;
+package com.paypal.mesos.executor.compose;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,7 +14,7 @@ import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.Value.Range;
 import org.apache.mesos.Protos.Value.Ranges;
 
-public class DockerRewriteHelper {
+public class ComposeRewriteHelper {
 
 	
 	private static final String CONTAINER_NAME = "container_name";
@@ -27,15 +27,21 @@ public class DockerRewriteHelper {
 	private static final String SERVICES = "services";
 	
 	public Map<String,Map<String,Map<String,Object>>> updateYaml(Map<String,Map<String,Map<String,Object>>> yamlMap,TaskInfo taskInfo,ExecutorInfo executorInfo){
+		System.out.println(" ############ STARTING updateYaml  ################");
 		if(yamlMap == null || yamlMap.isEmpty()){
 			return null;
 		}
 		Map<String,Map<String,Map<String,Object>>> resultantContainerMap = new HashMap<String,Map<String,Map<String,Object>>>();
 		resultantContainerMap.putAll(yamlMap);
 		String taskId = taskInfo.getTaskId().getValue();
+		System.out.println(" taskId: " + taskId);
+
 		Iterator<Long> portIterator = getPortMappingIterator(taskInfo);
+		// System.out.println(" portIterator: " + portIterator.toString());// this doesnt help
 		String executorId = executorInfo.getExecutorId().getValue();
+		System.out.println(" executorId: " + executorId);
 		Map<String,Map<String,Object>> services = yamlMap.get(SERVICES);
+		System.out.println(" services map: " + services.toString());
 		Map<String,Map<String,Object>> resultantServicesMap = new HashMap<String,Map<String,Object>>();
 		for(Map.Entry<String, Map<String,Object>> containerEntry:services.entrySet()){
 			
@@ -52,8 +58,12 @@ public class DockerRewriteHelper {
 
 	private Map<String,Object> updateContainerValue(String executorId,String taskId,Map<String,Object> containerDetails,Iterator<Long> portIterator){
 
+		System.out.println(" ##################  Starting updateContainerValue   ############### ");
+		System.out.println(" executorId: " + executorId + "  taskId: " + taskId + " containerDetails: " + containerDetails.toString() + " portIterator: " + portIterator.toString());
+
 		if(containerDetails.containsKey(CONTAINER_NAME)){
 			String containerValue = prefixTaskId(taskId,String.valueOf(containerDetails.get(CONTAINER_NAME)));
+			System.out.println("updated ContainerName: "+containerValue);
 			containerDetails.put(CONTAINER_NAME, containerValue);
 		}
 
@@ -62,6 +72,7 @@ public class DockerRewriteHelper {
 			String networkValueString = String.valueOf(networkValue);
 			String [] split = networkValueString.split(":");
 			String containerName = split[split.length-1];
+			System.out.println("updated network: " + "service:" + prefixTaskId(taskId, containerName));
 			containerDetails.put(NETWORK, "service:"+prefixTaskId(taskId, containerName));	
 		}
 		System.out.println("In update container values");
@@ -75,6 +86,7 @@ public class DockerRewriteHelper {
 				updatedLinks.add(prefixTaskId(taskId, link)+":"+link);
 				System.out.println(prefixTaskId(taskId, link));
 			}
+			System.out.println(" updatedLinks: "+updatedLinks);
 			containerDetails.put(LINKS, updatedLinks);
 		}
 
@@ -86,6 +98,7 @@ public class DockerRewriteHelper {
 			for(String link:links){
 				updatedLinks.add(prefixTaskId(taskId, link));
 			}
+			System.out.println("updated Links: "+updatedLinks);
 			containerDetails.put(DEPENDS_ON, updatedLinks);
 		}
 		
@@ -97,6 +110,7 @@ public class DockerRewriteHelper {
 			for(String volumeFrom:volumesFrom){
 				updatedVolumesFrom.add(prefixTaskId(taskId, volumeFrom));
 			}
+			System.out.println(" updated Volumes: "+updatedVolumesFrom);
 			containerDetails.put(VOLUMES_FROM, updatedVolumesFrom);
 		}
 
@@ -109,6 +123,7 @@ public class DockerRewriteHelper {
 				String replacedPort = replacePort(portString,portIterator);
 				updatedPorts.add(replacedPort);
 			}
+			System.out.println(" updatedPorts: "+updatedPorts);
 			containerDetails.put(PORTS, updatedPorts);
 		}
 		
@@ -119,6 +134,7 @@ public class DockerRewriteHelper {
 		}
 		taskIdLabel.put("taskId", taskId);
 		taskIdLabel.put("executorId",executorId);
+		System.out.println(" updated taskIdLabel: "+ taskIdLabel);
 		containerDetails.put(LABELS, taskIdLabel);
 		
 		return containerDetails;
