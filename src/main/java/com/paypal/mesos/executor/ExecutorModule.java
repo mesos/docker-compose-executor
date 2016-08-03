@@ -16,28 +16,36 @@ import org.yaml.snakeyaml.Yaml;
 @Module
 public class ExecutorModule {
 
-	@Provides Executor provideDockerComposeExecutor(ComposeFileList fileFetcher,DockerComposeProcessObserver processObserver,
-													ComposeMonitor composeMonitor, ComposeRewriteHelper helper){
-		return new DockerComposeExecutor(fileFetcher,processObserver,composeMonitor, helper);
-	}
-	
-	@Provides @Singleton ComposeMonitor provideComposeMonitor(){
-		return new ComposeMonitor();
-	}
-	
-	@Provides @Singleton DockerComposeProcessObserver provideDockerComposeProcessObserver(){
-		return new DockerComposeProcessObserver();
-	}
+    @Provides
+    Executor provideDockerComposeExecutor(ComposeFileList fileFetcher, DockerComposeProcessObserver processObserver,
+                                          ComposeMonitor composeMonitor, ComposeRewriteHelper helper) {
+        return new DockerComposeExecutor(fileFetcher, processObserver, composeMonitor, helper);
+    }
 
-	@Provides @Singleton
-	ComposeRewriteHelper provideComposeRewriteHelper() {
-		return new ComposeRewriteHelper();
-	}
+    @Provides
+    @Singleton
+    ComposeMonitor provideComposeMonitor() {
+        return new ComposeMonitor();
+    }
 
-	@Provides @Singleton Yaml provideYaml(){
-		DumperOptions options=new DumperOptions();
-		options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-		return new Yaml(options);
-	}
+    @Provides
+    @Singleton
+    DockerComposeProcessObserver provideDockerComposeProcessObserver() {
+        return new DockerComposeProcessObserver();
+    }
+
+    @Provides
+    @Singleton
+    ComposeRewriteHelper provideComposeRewriteHelper() {
+        return new ComposeRewriteHelper();
+    }
+
+    @Provides
+    @Singleton
+    Yaml provideYaml() {
+        DumperOptions options = new DumperOptions();
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        return new Yaml(options);
+    }
 
 }

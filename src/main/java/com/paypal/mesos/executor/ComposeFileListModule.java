@@ -11,8 +11,10 @@ import dagger.Provides;
 @Module
 public class ComposeFileListModule {
 
-	@Provides @Singleton ComposeFileList provideComposeFileList(){
-		return new ComposeFileListImpl();
-	}
+    @Provides
+    @Singleton
+    ComposeFileList provideComposeFileList() {
+        return new ComposeFileListImpl();
+    }
 
 }

@@ -72,6 +72,12 @@
 			<artifactId>pf4j</artifactId>
 			<version>0.13.1</version>
 		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.11</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 
@@ -125,14 +131,6 @@
 							<mainClass>com.paypal.mesos.executor.App</mainClass>
 						</manifest>
 					</archive>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-deploy-plugin</artifactId>
-				<version>3.1</version>
-				<configuration>
-				<skip>true</skip>
 				</configuration>
 			</plugin>
 		</plugins>

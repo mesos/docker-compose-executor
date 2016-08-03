@@ -7,6 +7,6 @@ import org.apache.mesos.Protos.TaskInfo;
 
 public interface ComposeFileList {
 
-	List<String> getFile(TaskInfo taskInfo) throws IOException;
-	
+    List<String> getFile(TaskInfo taskInfo) throws IOException;
+
 }
