@@ -42,7 +42,10 @@ public class ComposeFileListImpl implements ComposeFileList {
         Labels labels = taskInfo.getLabels();
         for (Label label : labels.getLabelsList()) {
             if ("fileName".equals(label.getKey())) {
-                return Arrays.asList(label.getValue().split(FILE_DELIMITER));
+                List<String> files = Arrays.asList(label.getValue().split(FILE_DELIMITER));
+                for (int i = 0; i < files.size(); i++)
+                    files.set(i, files.get(i).trim());
+                return files;
             }
         }
         log.warn("error reading fileName from taskInfo");
