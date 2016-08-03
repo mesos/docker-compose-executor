@@ -7,9 +7,9 @@ import org.apache.mesos.Executor;
 import dagger.Component;
 
 @Singleton
-@Component(modules = { ComposeFileListModule.class,ExecutorModule.class})
+@Component(modules = {ComposeFileListModule.class, ExecutorModule.class})
 public interface ExecutorComponent {
 
-	Executor getExecutor();
-	
+    Executor getExecutor();
+
 }
