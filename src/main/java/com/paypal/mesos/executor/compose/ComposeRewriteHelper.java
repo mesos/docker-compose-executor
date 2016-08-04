@@ -187,7 +187,13 @@ public class ComposeRewriteHelper {
 
     private String prefixTaskId(String taskId, String key) {
         StringBuilder builder = new StringBuilder();
-        return builder.append(taskId).append("_").append(key).toString();
+        builder.append(key.toString()).append("-").append(taskId);
+        String newId = builder.toString();
+
+        newId.replaceAll("[^a-zA-Z0-9-]" ,"");
+        if (newId.length() > 63)
+            newId = newId.substring(0,63);
+        return newId;
     }
 
 
