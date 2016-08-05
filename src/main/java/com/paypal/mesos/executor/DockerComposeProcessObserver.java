@@ -23,7 +23,7 @@ public class DockerComposeProcessObserver implements Observer<Integer> {
 
     @Override
     public void onCompleted() {
-
+        log.info("DockerComposeProcessObserver: onCompleted ");
     }
 
     @Override
@@ -34,7 +34,7 @@ public class DockerComposeProcessObserver implements Observer<Integer> {
 
     @Override
     public void onNext(Integer t) {
-        log.info("executor for taskId:" + taskId.getValue() + " exited with exitCode:" + t);
+        log.info("DockerComposeProcessObserver: executor for taskId:" + taskId.getValue() + " exited with exitCode:" + t);
         executor.suicide(taskId, t);
     }
 
