@@ -56,6 +56,8 @@ public class DockerComposeExecutor implements Executor {
 
     final PluginManager pluginManager = new DefaultPluginManager();
 
+    private volatile boolean isShutDownInProgress = false;
+
     private boolean pluginEnabled = false;
 
     @Inject
@@ -94,6 +96,7 @@ public class DockerComposeExecutor implements Executor {
             });
             podMonitor.startMonitoring(this.fileNames);
             updateImagesAndStartCompose(taskId);
+            log.debug("sending TASK_RUNNING status update");
             sendTaskStatusUpdate(executorDriver, taskId, TaskState.TASK_RUNNING);
         } catch (Exception e) {
             log.error("exception while launching process", e);
@@ -143,6 +146,7 @@ public class DockerComposeExecutor implements Executor {
                 String launchCommand = CommandBuilder.launchTask(fileNames);
                 log.debug(" launchCommand: " + launchCommand);
                 int exitCode = ProcessUtils.executeCommand(launchCommand, null);
+                log.debug("updateImagesAndStartCompose exit code: "+exitCode);
                 subscriber.onNext(exitCode);
                 subscriber.onCompleted();
             }
@@ -153,21 +157,46 @@ public class DockerComposeExecutor implements Executor {
 
         if (log.isDebugEnabled()) {
             log.debug(" ############## suicide #######");
-            log.debug("taskId: " + taskId.toString() + "  exitCode: " + exitCode);
-        }
-        int stopContainers = cleanUp();
-
-        if (this.pluginManager != null) {
-            this.pluginManager.stopPlugins();
+            if (taskId != null)
+                log.debug("taskId: " + taskId.toString() + "  exitCode: " + exitCode);
         }
 
-        if (exitCode == 0 && stopContainers == 0) {
+        if (this.isShutDownInProgress && exitCode == 0) {
+            // proceed with finish task
+            int stopContainers = cleanUp();
+            if (this.pluginManager != null) {
+                this.pluginManager.stopPlugins();
+            }
+            log.debug(" cleanUp exit code: " + stopContainers);
             sendTaskStatusUpdate(executorDriver, taskId, TaskState.TASK_FINISHED);
             System.exit(0);
         } else {
-            sendTaskStatusUpdate(executorDriver, taskId, TaskState.TASK_FAILED);
-            System.exit(1);
+            if (!isShutDownInProgress) {
+                int stopContainers = cleanUp();
+                if (this.pluginManager != null) {
+                    this.pluginManager.stopPlugins();
+                }
+                sendTaskStatusUpdate(executorDriver, taskId, TaskState.TASK_FAILED);
+                System.exit(1);
+            } else {
+                log.debug(" shutdown already in progress..");
+            }
+
         }
+//
+//        int stopContainers = cleanUp();
+//
+//        if (this.pluginManager != null) {
+//            this.pluginManager.stopPlugins();
+//        }
+//
+//        if (exitCode == 0 && stopContainers == 0) {
+//            sendTaskStatusUpdate(executorDriver, taskId, TaskState.TASK_FINISHED);
+//            System.exit(0);
+//        } else {
+//            sendTaskStatusUpdate(executorDriver, taskId, TaskState.TASK_FAILED);
+//            System.exit(1);
+//        }
     }
 
 
@@ -184,6 +213,8 @@ public class DockerComposeExecutor implements Executor {
         String killTask = CommandBuilder.stopTask(fileNames);
         log.debug(" killTask: " + killTask);
         int exitCode = ProcessUtils.executeCommand(killTask, null);
+        log.debug(" cleanUp killTask exitCode: " + exitCode);
+
         if (exitCode != 0) {
             exitCode = linuxKill(fileNames);
         }
@@ -210,17 +241,23 @@ public class DockerComposeExecutor implements Executor {
             log.debug(" command: " + command);
             exitCode = ProcessUtils.executeCommand(command, null);
         }
+        log.debug(" linuxKill exitCode: "+exitCode);
         return exitCode;
     }
 
     private void sendTaskStatusUpdate(ExecutorDriver executorDriver, TaskID taskId, TaskState taskState) {
-        TaskStatus taskStatus = TaskStatus.newBuilder().setTaskId(taskId).setState(taskState).build();
-        executorDriver.sendStatusUpdate(taskStatus);
+        if (taskId != null) {
+            TaskStatus taskStatus = TaskStatus.newBuilder().setTaskId(taskId).setState(taskState).build();
+            executorDriver.sendStatusUpdate(taskStatus);
+        } else {
+            log.error("taskId is null");
+        }
     }
 
     @Override
     public void killTask(ExecutorDriver executorDriver, TaskID taskId) {
         log.info("killTask, taskId:" + taskId.getValue());
+        this.isShutDownInProgress = true;
         suicide(taskId, 0);
     }
 
@@ -256,6 +293,7 @@ public class DockerComposeExecutor implements Executor {
     @Override
     public void shutdown(ExecutorDriver executorDriver) {
         log.debug("shutting down executor");
+        this.isShutDownInProgress = true;
         shutdownPlugin();
         suicide(null, 0);
     }
