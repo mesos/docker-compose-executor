@@ -10,9 +10,8 @@
 		<dependency>
 			<groupId>org.apache.mesos</groupId>
 			<artifactId>mesos</artifactId>
-			<version>0.24.1</version>
+			<version>0.28.2</version>
 		</dependency>
-
 
 		<dependency>
 			<groupId>log4j</groupId>
@@ -79,16 +78,12 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
-
-
-
 	<build>
 		<outputDirectory>bin/classes</outputDirectory>
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.1</version>
+				<version>3.5.1</version>
 				<dependencies>
 					<dependency>
 						<groupId>com.google.dagger</groupId>
@@ -105,11 +100,11 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>
+				<version>2.6</version>
 				<configuration>
 					<descriptorRefs>
 						<descriptorRef>jar-with-dependencies</descriptorRef>
 					</descriptorRefs>
-
 				</configuration>
 				<executions>
 					<execution>
