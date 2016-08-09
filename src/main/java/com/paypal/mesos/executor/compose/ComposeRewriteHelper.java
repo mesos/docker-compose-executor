@@ -1,7 +1,5 @@
 package com.paypal.mesos.executor.compose;
 
-import java.util.*;
-
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.ExecutorInfo;
@@ -9,6 +7,8 @@ import org.apache.mesos.Protos.Resource;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.Value.Range;
 import org.apache.mesos.Protos.Value.Ranges;
+
+import java.util.*;
 
 public class ComposeRewriteHelper {
 

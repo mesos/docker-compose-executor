@@ -1,23 +1,21 @@
 package com.paypal.mesos.executor.monitoring;
 
-import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.StringTokenizer;
-import java.util.concurrent.TimeUnit;
-
+import com.paypal.mesos.executor.CommandBuilder;
+import com.paypal.mesos.executor.config.Config;
+import com.paypal.mesos.executor.utils.ProcessUtils;
 import org.apache.log4j.Logger;
-
 import rx.Observable;
 import rx.Observer;
 import rx.Subscription;
 import rx.functions.Action1;
 import rx.subjects.BehaviorSubject;
 
-import com.paypal.mesos.executor.CommandBuilder;
-import com.paypal.mesos.executor.config.Config;
-import com.paypal.mesos.executor.utils.ProcessUtils;
+import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.StringTokenizer;
+import java.util.concurrent.TimeUnit;
 
 //TODO remode
 public class ComposeMonitor {

@@ -1,8 +1,8 @@
 package com.paypal.mesos.executor;
 
-import java.util.List;
-
 import com.paypal.mesos.executor.config.Config;
+
+import java.util.List;
 
 
 public class CommandBuilder {
