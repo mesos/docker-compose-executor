@@ -1,25 +1,15 @@
 package com.paypal.mesos.executor;
 
-import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-
+import com.paypal.mesos.executor.compose.ComposeFileList;
 import com.paypal.mesos.executor.compose.ComposeRewriteHelper;
+import com.paypal.mesos.executor.monitoring.ComposeMonitor;
+import com.paypal.mesos.executor.monitoring.ContainerDetails;
 import com.paypal.mesos.executor.pluginapi.ComposeExecutorPlugin;
+import com.paypal.mesos.executor.utils.ProcessUtils;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
-import org.apache.mesos.Protos.ExecutorInfo;
-import org.apache.mesos.Protos.FrameworkInfo;
-import org.apache.mesos.Protos.SlaveInfo;
-import org.apache.mesos.Protos.TaskID;
-import org.apache.mesos.Protos.TaskInfo;
-import org.apache.mesos.Protos.TaskState;
-import org.apache.mesos.Protos.TaskStatus;
-
+import org.apache.mesos.Protos.*;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import ro.fortsoft.pf4j.DefaultPluginManager;
@@ -29,10 +19,11 @@ import rx.Subscriber;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
-import com.paypal.mesos.executor.compose.ComposeFileList;
-import com.paypal.mesos.executor.monitoring.ComposeMonitor;
-import com.paypal.mesos.executor.monitoring.ContainerDetails;
-import com.paypal.mesos.executor.utils.ProcessUtils;
+import javax.inject.Inject;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class DockerComposeExecutor implements Executor {
 

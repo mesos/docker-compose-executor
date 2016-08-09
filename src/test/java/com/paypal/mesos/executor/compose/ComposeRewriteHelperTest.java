@@ -3,15 +3,12 @@ package com.paypal.mesos.executor.compose;
 import com.paypal.mesos.executor.DockerComposeExecutor;
 import com.paypal.mesos.executor.DockerComposeProcessObserver;
 import com.paypal.mesos.executor.monitoring.ComposeMonitor;
-import junit.framework.Test;
 import org.apache.mesos.Protos;
-import com.paypal.mesos.executor.compose.ComposeRewriteHelper;
 import org.junit.Assert;
-import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.Yaml;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 
 /**

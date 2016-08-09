@@ -2,7 +2,6 @@ package com.paypal.mesos.executor;
 
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos.TaskID;
-
 import rx.Observer;
 
 public class DockerComposeProcessObserver implements Observer<Integer> {

@@ -1,9 +1,9 @@
 package com.paypal.mesos.executor.compose;
 
+import org.apache.mesos.Protos.TaskInfo;
+
 import java.io.IOException;
 import java.util.List;
-
-import org.apache.mesos.Protos.TaskInfo;
 
 public interface ComposeFileList {
 

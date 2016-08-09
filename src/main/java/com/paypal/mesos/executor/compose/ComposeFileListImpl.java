@@ -1,17 +1,16 @@
 package com.paypal.mesos.executor.compose;
 
+import org.apache.log4j.Logger;
+import org.apache.mesos.Protos.Label;
+import org.apache.mesos.Protos.Labels;
+import org.apache.mesos.Protos.TaskInfo;
+
+import javax.inject.Inject;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-import org.apache.mesos.Protos.Label;
-import org.apache.mesos.Protos.Labels;
-import org.apache.mesos.Protos.TaskInfo;
 
 
 public class ComposeFileListImpl implements ComposeFileList {

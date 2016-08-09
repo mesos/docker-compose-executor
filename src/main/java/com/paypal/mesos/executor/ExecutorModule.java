@@ -1,17 +1,15 @@
 package com.paypal.mesos.executor;
 
-import javax.inject.Singleton;
-
-import com.paypal.mesos.executor.compose.ComposeRewriteHelper;
-import org.apache.mesos.Executor;
-
 import com.paypal.mesos.executor.compose.ComposeFileList;
+import com.paypal.mesos.executor.compose.ComposeRewriteHelper;
 import com.paypal.mesos.executor.monitoring.ComposeMonitor;
-
 import dagger.Module;
 import dagger.Provides;
+import org.apache.mesos.Executor;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+
+import javax.inject.Singleton;
 
 @Module
 public class ExecutorModule {

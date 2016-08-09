@@ -1,10 +1,9 @@
 package com.paypal.mesos.executor;
 
-import javax.inject.Singleton;
-
+import dagger.Component;
 import org.apache.mesos.Executor;
 
-import dagger.Component;
+import javax.inject.Singleton;
 
 @Singleton
 @Component(modules = {ComposeFileListModule.class, ExecutorModule.class})

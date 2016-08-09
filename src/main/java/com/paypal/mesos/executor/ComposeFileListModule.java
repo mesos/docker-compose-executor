@@ -1,12 +1,11 @@
 package com.paypal.mesos.executor;
 
-import javax.inject.Singleton;
-
-import com.paypal.mesos.executor.compose.ComposeFileListImpl;
 import com.paypal.mesos.executor.compose.ComposeFileList;
-
+import com.paypal.mesos.executor.compose.ComposeFileListImpl;
 import dagger.Module;
 import dagger.Provides;
+
+import javax.inject.Singleton;
 
 @Module
 public class ComposeFileListModule {
