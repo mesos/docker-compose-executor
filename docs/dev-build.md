@@ -18,9 +18,8 @@ Use the fat jar generated with all the dependencies.
 
 > Marathon supports custom executor and you can specify a shell script (compose_executor.sh).
 ```
-  COMPOSE_JAR_NAME=<path to jar file>/docker-compose-executor-0.0.1-SNAPSHOT-jar-with-dependencies.jar
-  COMPOSE_CLASS_NAME=com.paypal.mesos.executor.App
-  java -cp ${COMPOSE_JAR_NAME} ${COMPOSE_CLASS_NAME}
+  COMPOSE_JAR_NAME=<path to jar file>/docker-compose-executor_0.0.1.jar
+  java -jar ${COMPOSE_JAR_NAME}
 ```
 > Create a new marathon app
 ```

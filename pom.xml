@@ -3,59 +3,49 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.paypal.mesos</groupId>
 	<artifactId>docker-compose-executor</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-
+	<version>0.0.1</version>
 	<dependencies>
-
 		<dependency>
 			<groupId>org.apache.mesos</groupId>
 			<artifactId>mesos</artifactId>
 			<version>0.28.2</version>
 		</dependency>
-
 		<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
 			<version>1.2.17</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.google.protobuf</groupId>
 			<artifactId>protobuf-java</artifactId>
 			<version>2.5.0</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.google.dagger</groupId>
 			<artifactId>dagger</artifactId>
 			<version>2.0</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.google.dagger</groupId>
 			<artifactId>dagger-compiler</artifactId>
 			<version>2.0</version>
 			<optional>true</optional>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
 			<version>3.0</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.yaml</groupId>
 			<artifactId>snakeyaml</artifactId>
 			<version>1.5</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
 			<version>2.3.1</version>
 		</dependency>
-
 		<dependency>
 			<groupId>io.reactivex</groupId>
 			<artifactId>rxjava</artifactId>
@@ -102,9 +92,17 @@
 				<artifactId>maven-assembly-plugin</artifactId>
 				<version>2.6</version>
 				<configuration>
+					<archive>
+						<manifest>
+							<addClasspath>true</addClasspath>
+							<mainClass>com.paypal.mesos.executor.App</mainClass>
+						</manifest>
+					</archive>
 					<descriptorRefs>
 						<descriptorRef>jar-with-dependencies</descriptorRef>
-					</descriptorRefs>
+               </descriptorRefs>
+               <finalName>docker-compose-executor_${project.version}</finalName>
+               <appendAssemblyId>false</appendAssemblyId>
 				</configuration>
 				<executions>
 					<execution>
@@ -119,16 +117,8 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<configuration>
-					<archive>
-						<manifest>
-							<addClasspath>true</addClasspath>
-							<mainClass>com.paypal.mesos.executor.App</mainClass>
-						</manifest>
-					</archive>
-				</configuration>
 			</plugin>
-		</plugins>
+      </plugins>
+      <finalName>${project.artifactId}_${project.version}</finalName>
 	</build>
-
 </project>
