@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.paypal.mesos</groupId>
 	<artifactId>docker-compose-executor</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.mesos</groupId>
@@ -101,7 +101,7 @@
 					<descriptorRefs>
 						<descriptorRef>jar-with-dependencies</descriptorRef>
                </descriptorRefs>
-               <finalName>docker-compose-executor</finalName>
+               <finalName>docker-compose-executor_${project.version}</finalName>
                <appendAssemblyId>false</appendAssemblyId>
 				</configuration>
 				<executions>
@@ -119,6 +119,6 @@
 				<artifactId>maven-jar-plugin</artifactId>
 			</plugin>
       </plugins>
-      <finalName>${project.artifactId}</finalName>
+      <finalName>${project.artifactId}_${project.version}</finalName>
 	</build>
 </project>
