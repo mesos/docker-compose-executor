@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
+apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
 echo deb https://apt.dockerproject.org/repo ubuntu-trusty main > /etc/apt/sources.list.d/docker.list
+apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv E56151BF
+echo deb http://repos.mesosphere.com/ubuntu trusty main > /etc/apt/sources.list.d/mesosphere.list
 
 apt-get update -q --fix-missing
 apt-get -qy install software-properties-common
@@ -37,7 +39,7 @@ apt-get -y install \
     zookeeperd \
     python-pip \
     maven \
-    build-essential                         \
+    build-essential                        \
    autoconf                                \
    automake                                \
    ca-certificates                         \
@@ -66,26 +68,26 @@ apt-get -y install \
 update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
 
 readonly IP_ADDRESS=192.168.33.7
-
-readonly MESOS_VERSION=0.25.0
+readonly MESOS_VERSION=0.28.2-2.0.27
+readonly MARATHON_VERSION=1.1.2-1.0.482
 
 
 function install_mesos {
-  deb=mesos_${MESOS_VERSION}-0.2.70.ubuntu1404_amd64.deb
-  wget -c http://downloads.mesosphere.io/master/ubuntu/14.04/$deb
-  dpkg --install $deb
-} 
-
-function install_marathon {
-  sudo pip install docker-compose
-  sudo dpkg --purge marathon
-  wget -c https://dl.dropboxusercontent.com/u/26009359/marathon_0.11.1-1.0.432.ubuntu1404_amd64.deb
-  sudo dpkg --install  marathon_0.11.1-1.0.432.ubuntu1404_amd64.deb
+  apt-get -y install mesos=${MESOS_VERSION}.ubuntu1404
 }
 
+function install_marathon {
+  apt-get -y install marathon=${MARATHON_VERSION}.ubuntu1404
+}
+
+function install_docker_compose {
+  pip install docker-compose
+}
+
+
 function build_docker_compose_executor {
-   sudo mvn -f /home/vagrant/marathon/pom.xml clean package -U
-   sudo chmod 777 /home/vagrant/marathon/target/docker-compose-executor-0.0.1-SNAPSHOT-jar-with-dependencies.jar    
+  mvn -f /home/vagrant/marathon/pom.xml clean package -U
+  chmod 777 /home/vagrant/marathon/target/docker-compose-executor_0.0.1.jar
 }
 
 function install_cluster_config {
@@ -148,6 +150,8 @@ EOF
 }
 
 install_mesos
+install_marathon
+install_docker_compose
 prepare_sources
 install_marathon
 install_cluster_config
