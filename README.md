@@ -16,6 +16,11 @@ The project goal is to model a pod of containers with docker-compose and launch 
 * [How Docker Compose Executor works](docs/how-it-works.md)
 * [Developing Docker Compose Executor](docs/dev-build.md)
 
+## Tested Frameworks
+
+* [Marathon](https://github.com/mesosphere/marathon)
+* [Apache Aurora](https://github.com/rdelval/gorealis/blob/master/docs/getting-started.md)
+
 
 ## Licensing
 compose-executor is licensed under the Apache License, Version 2.0. See [LICENSE](/LICENSE) for the full license text.
