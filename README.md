@@ -19,7 +19,7 @@ The project goal is to model a pod of containers with docker-compose and launch 
 ## Tested Frameworks
 
 * [Marathon](https://github.com/mesosphere/marathon)
-* [Apache Aurora](https://github.com/rdelval/gorealis/blob/master/docs/getting-started.md)
+* [Apache Aurora using gorealis](https://github.com/rdelval/gorealis/blob/master/docs/getting-started.md)
 
 
 ## Licensing
