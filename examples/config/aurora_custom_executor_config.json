@@ -1,0 +1,21 @@
+[  
+  {  
+    "executor":{  
+      "command":{  
+        "value":"java -jar docker-compose-executor_0.1.1.jar",
+        "shell":"true",
+        "uris":[  
+          {  
+            "cache":false,
+            "executable":true,
+            "extract":false,
+            "value":"https://github.com/mesos/docker-compose-executor/releases/download/0.1.1/docker-compose-executor_0.1.1.jar"
+          }
+        ]
+      },
+      "name":"docker-compose-executor",
+      "resources":[]
+    },
+    "task_prefix":"compose-"
+  }
+]
