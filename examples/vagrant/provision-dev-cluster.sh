@@ -69,10 +69,16 @@ apt-get -y install \
 update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
 
 readonly IP_ADDRESS=192.168.33.7
-readonly MESOS_VERSION=0.28.2-2.0.27
+#readonly MESOS_VERSION=0.28.2-2.0.27
+readonly MESOS_VERSION=1.0.0-2.0.89
 readonly MARATHON_VERSION=1.1.2-1.0.482
 readonly PROJECT_HOME_DIR='/home/vagrant/marathon'
-readonly PROJECT_VERSION=`mvn -f $PROJECT_HOME_DIR/pom.xml org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | sed -n -e '/^\[.*\]/ !{ /^[0-9]/ { p; q } }'`
+readonly PROJECT_VERSION=`mvn -f /vagrant/pom.xml -q \
+   -Dexec.executable="echo" \
+   -Dexec.args='${project.version}' \
+   --non-recursive \
+   org.codehaus.mojo:exec-maven-plugin:1.3.1:exec`
+export PROJECT_VERSION
 
 
 function install_mesos {
@@ -93,7 +99,9 @@ function get_pom_version {
 
 function build_docker_compose_executor {
   mvn -f /home/vagrant/marathon/pom.xml clean package -U
+echo -e 'PROJECT_HOME_DIR='/home/vagrant/marathon/' \nCOMPOSE_JAR_NAME=/home/vagrant/marathon/target/docker-compose-executor_$PROJECT_VERSION.jar \njava -jar ${COMPOSE_JAR_NAME}' | envsubst '$PROJECT_VERSION' > /home/vagrant/marathon/examples/vagrant/docker-compose-executor.sh
   chmod 777 /home/vagrant/marathon/target/docker-compose-executor_${PROJECT_VERSION}.jar
+  chmod +x /home/vagrant/marathon/examples/vagrant/docker-compose-executor.sh
 }
 
 function install_cluster_config {
@@ -159,7 +167,6 @@ install_mesos
 install_marathon
 install_docker_compose
 prepare_sources
-install_marathon
 install_cluster_config
 install_ssh_config
 start_services

@@ -7,7 +7,7 @@ public interface Config {
 	public static final boolean MONITOR_POD = true;
 	
 	//time in milliseconds
-	public static final int POD_MONITOR_INTERVAL = 500;
+	public static final int POD_MONITOR_INTERVAL = 2000;
 	
 	public static final boolean IGNORE_PULL_FAILURES = false;
 }

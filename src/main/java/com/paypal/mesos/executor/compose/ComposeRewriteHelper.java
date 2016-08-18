@@ -114,7 +114,7 @@ public class ComposeRewriteHelper {
         Object volumesFromValues = containerDetails.get(VOLUMES_FROM);
         if (volumesFromValues != null) {
             List<String> updatedVolumesFrom = new ArrayList<String>();
-            List<?> volumesFrom = (List<?>) updatedVolumesFrom;
+            List<?> volumesFrom = (List<?>) volumesFromValues;
 
             for (Object o : volumesFrom) {
                 String volume = (String) o;

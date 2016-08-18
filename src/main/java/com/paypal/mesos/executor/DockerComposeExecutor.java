@@ -22,8 +22,10 @@ import rx.schedulers.Schedulers;
 import javax.inject.Inject;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class DockerComposeExecutor implements Executor {
 
@@ -145,7 +147,6 @@ public class DockerComposeExecutor implements Executor {
     }
 
     public void suicide(TaskID taskId, int exitCode) {
-
         if (log.isDebugEnabled()) {
             log.debug(" ############## suicide #######");
             if (taskId != null)
@@ -159,14 +160,17 @@ public class DockerComposeExecutor implements Executor {
                 this.pluginManager.stopPlugins();
             }
             log.debug(" cleanUp exit code: " + stopContainers);
-            sendTaskStatusUpdate(executorDriver, taskId, TaskState.TASK_FINISHED);
-            System.exit(0);
+            log.debug("Sending TASK_KILLED status..");
+            sendTaskStatusUpdate(executorDriver, taskId, TaskState.TASK_KILLED);
+            if (executorDriver != null)
+                executorDriver.stop();
         } else {
             if (!isShutDownInProgress) {
                 int stopContainers = cleanUp();
                 if (this.pluginManager != null) {
                     this.pluginManager.stopPlugins();
                 }
+                log.debug("Sending TASK_FAILED status");
                 sendTaskStatusUpdate(executorDriver, taskId, TaskState.TASK_FAILED);
                 System.exit(1);
             } else {
