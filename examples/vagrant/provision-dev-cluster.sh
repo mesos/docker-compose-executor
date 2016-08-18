@@ -73,7 +73,11 @@ readonly IP_ADDRESS=192.168.33.7
 readonly MESOS_VERSION=1.0.0-2.0.89
 readonly MARATHON_VERSION=1.1.2-1.0.482
 readonly PROJECT_HOME_DIR='/home/vagrant/marathon'
-readonly PROJECT_VERSION=`mvn -f $PROJECT_HOME_DIR/pom.xml org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | sed -n -e '/^\[.*\]/ !{ /^[0-9]/ { p; q } }'`
+readonly PROJECT_VERSION=`mvn -f /vagrant/pom.xml -q \
+   -Dexec.executable="echo" \
+   -Dexec.args='${project.version}' \
+   --non-recursive \
+   org.codehaus.mojo:exec-maven-plugin:1.3.1:exec`
 export PROJECT_VERSION
 
 
