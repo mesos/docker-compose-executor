@@ -1,3 +1,5 @@
+**DEPRECATED** The project has moved to https://github.com/paypal/dce-go with brand new features supported and rewritten in go.
+
 # Overview
 
 compose-executor project aims to enable Mesos frameworks to launch a pod of docker containers. Kubernetes/K8 introduced the notion of a collection of docker containers that share namespaces and treat the collection as a single scaling unit. Brendan Burns talked about some design patterns/use cases for pods in [DockerCon'15](https://www.youtube.com/watch?v=Ph3t8jIt894).
